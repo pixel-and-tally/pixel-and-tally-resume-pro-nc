@@ -1,6 +1,7 @@
 import { formEndpoint } from "../../lib/endpoint";
 import { parseOrder } from "../../lib/forms";
-import { orderEmail, orderReceipt } from "../../lib/mail";
+import { questionnaireReceived } from "../../lib/client-mail";
+import { orderEmail } from "../../lib/mail";
 import { paypalLink } from "../../lib/order";
 import { newId, orderFromForm, orderKey, saveFile } from "../../lib/records";
 import { store } from "../../lib/store";
@@ -22,8 +23,12 @@ export const POST = formEndpoint({
     const item = `Resume Pro NC: ${v.priced.lines.map((l) => l.name).join(", ")}`;
     return [
       { email: await orderEmail(v, link) },
-      // The visitor's copy. If it fails, Nancy still has the order.
-      { email: orderReceipt(v, cfg.to, paypalLink(site.paypalEmail, v.priced.total, item)), to: v.email, optional: true },
+      // Nancy's "questionnaire received" email with the payment link. If it fails, Nancy still has the order.
+      {
+        email: questionnaireReceived(v.name, v.priced.total, v.priced.lines.map((l) => l.name), cfg.to, paypalLink(site.paypalEmail, v.priced.total, item)),
+        to: v.email,
+        optional: true,
+      },
     ];
   },
   thanks: (v) => {

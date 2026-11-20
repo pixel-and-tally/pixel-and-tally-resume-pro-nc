@@ -6,7 +6,7 @@ import { questionnaire, toAttachment, type ContactValue, type OrderValue, type R
 
 export type SendConfig = { apiKey: string; to: string; from: string };
 type Attachment = { filename: string; content: string };
-export type Email = { subject: string; text: string; replyTo: string; attachments?: Attachment[] };
+export type Email = { subject: string; text: string; html?: string; replyTo: string; attachments?: Attachment[] };
 
 const dashboardLine = (url: string) => (url ? ["", `Open it in your dashboard: ${url}`] : []);
 const section = (title: string, body: string) => (body ? `${title}\n${body}\n` : "");
@@ -113,32 +113,6 @@ export async function orderEmail(v: OrderValue, dashboardUrl = ""): Promise<Emai
   };
 }
 
-/** A short receipt to the visitor so they know it arrived. Reply-To is Nancy. */
-export function orderReceipt(v: OrderValue, nancyEmail: string, payLink: string): Email {
-  const order = v.priced.lines.map((l) => `  ${l.name}: ${money(l.price)}`).join("\n");
-  return {
-    subject: "Your Resume Pro NC order",
-    replyTo: nancyEmail,
-    text: [
-      `Hi ${v.name.split(" ")[0]},`,
-      "",
-      "Thank you for your order. Here's what you picked:",
-      "",
-      order,
-      `  Total: ${money(v.priced.total)}`,
-      "",
-      payLink
-        ? `You can pay here: ${payLink}\nI start writing once payment is received.`
-        : "I'll email you an invoice you can pay by credit card, debit card or PayPal. I start writing once it's paid.",
-      "",
-      "If you think of anything else to add, just reply to this email.",
-      "",
-      "Nancy Turner",
-      "Resume Pro NC",
-    ].join("\n"),
-  };
-}
-
 export async function send(email: Email, cfg: SendConfig, to = cfg.to, fetcher: typeof fetch = fetch) {
   const res = await fetcher("https://api.resend.com/emails", {
     method: "POST",
@@ -149,6 +123,7 @@ export async function send(email: Email, cfg: SendConfig, to = cfg.to, fetcher: 
       reply_to: email.replyTo,
       subject: email.subject,
       text: email.text,
+      html: email.html,
       attachments: email.attachments,
     }),
   });

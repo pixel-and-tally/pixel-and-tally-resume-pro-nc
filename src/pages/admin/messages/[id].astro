@@ -2,6 +2,9 @@
 import Admin from "../../../layouts/Admin.astro";
 import { isAdmin, smsLink, telLink } from "../../../lib/admin";
 import { sameOrigin } from "../../../lib/auth";
+import { inquiryEmail, inquiryText } from "../../../lib/client-mail";
+import { mailConfig, send } from "../../../lib/mail";
+import { site } from "../../../site";
 import { formatStamp, messageKey, messageKinds, type MessageRecord } from "../../../lib/records";
 import { store } from "../../../lib/store";
 
@@ -14,14 +17,36 @@ const loaded = await s.getJSON<MessageRecord>(messageKey(Astro.params.id ?? ""))
 if (!loaded) return new Response("Message not found", { status: 404 });
 const m: MessageRecord = loaded;
 
+let replyError = "";
+let replyBody = inquiryText(m.name, new Date());
 if (Astro.request.method === "POST" && sameOrigin(Astro.request)) {
   const form = await Astro.request.formData();
-  m.notes = String(form.get("notes") ?? "").slice(0, 20000);
-  m.handled = form.get("handled") === "on";
-  await s.setJSON(messageKey(m.id), m);
-  return Astro.redirect(`/admin/messages/${m.id}/?saved=1`, 303);
+  if (form.get("action") === "reply") {
+    replyBody = String(form.get("body") ?? "").slice(0, 10000);
+    const cfg = mailConfig();
+    if (replyBody.trim().length < 10) replyError = "Write the email before sending.";
+    else if (!cfg.apiKey) replyError = "Email isn't set up yet (RESEND_API_KEY in Netlify), so nothing was sent.";
+    else {
+      try {
+        await send(inquiryEmail(replyBody, cfg.to || site.email), cfg, m.email);
+        (m.sent ??= []).push({ at: new Date().toISOString(), what: "Sent your Resume Information email" });
+        m.handled = true;
+        await s.setJSON(messageKey(m.id), m);
+        return Astro.redirect(`/admin/messages/${m.id}/?sent=1`, 303);
+      } catch (err) {
+        console.error(err);
+        replyError = "The email didn't send. Try again in a minute.";
+      }
+    }
+  } else {
+    m.notes = String(form.get("notes") ?? "").slice(0, 20000);
+    m.handled = form.get("handled") === "on";
+    await s.setJSON(messageKey(m.id), m);
+    return Astro.redirect(`/admin/messages/${m.id}/?saved=1`, 303);
+  }
 }
 const saved = Astro.url.searchParams.has("saved");
+const sent = Astro.url.searchParams.has("sent");
 const box = "rounded-card border border-rule bg-sheet p-5 sm:p-6";
 ---
 
@@ -31,6 +56,8 @@ const box = "rounded-card border border-rule bg-sheet p-5 sm:p-6";
   <h1 class="mt-2 text-3xl sm:text-4xl">{m.name}</h1>
   <p class="mt-1 text-muted">Received {formatStamp(m.createdAt)}</p>
   {saved && <p role="status" class="mt-6 rounded bg-accent-soft p-3 text-sm font-semibold text-accent">Saved.</p>}
+  {sent && <p role="status" class="mt-6 rounded bg-accent-soft p-3 text-sm font-semibold text-accent">Email sent and marked handled.</p>}
+  {replyError && <p role="alert" class="mt-6 rounded border border-danger p-3 text-sm font-semibold text-danger">{replyError}</p>}
 
   <div class="mt-8 grid gap-6 lg:grid-cols-[1fr_22rem]">
     <section class={box}>
@@ -44,6 +71,17 @@ const box = "rounded-card border border-rule bg-sheet p-5 sm:p-6";
           {m.files.map((f) => <li><a href={`/admin/files/${f.key.replace(/^file\//, "")}`} class="font-semibold text-accent underline underline-offset-4">{f.label}</a> <span class="text-muted">{f.filename}</span></li>)}
         </ul>
       )}
+      <form method="post" class="mt-8 flex flex-col gap-4 border-t border-rule pt-6">
+        <input type="hidden" name="action" value="reply" />
+        <h2 class="font-display text-2xl">Send your "Resume Information" email</h2>
+        {m.sent?.length ? <p class="text-sm text-muted">{m.sent.map((x) => `${x.what}, ${formatStamp(x.at)}`).join(". ")}.</p> : null}
+        <div class="flex flex-col gap-1.5">
+          <label for="body" class="text-sm font-semibold">Email to {m.name.split(" ")[0]} <span class="font-normal text-muted">(edit anything, your signature is added)</span></label>
+          <textarea id="body" name="body" rows="14" autocomplete="off" aria-invalid={replyError ? "true" : undefined} autofocus={Boolean(replyError)} aria-describedby="body-error" class="field">{replyBody}</textarea>
+          <p id="body-error" class="text-sm font-semibold text-danger" hidden={!replyError}>{replyError}</p>
+        </div>
+        <button class="btn btn-primary w-fit">Send to {m.email}</button>
+      </form>
     </section>
     <aside class="flex flex-col gap-6">
       <section class={box}>

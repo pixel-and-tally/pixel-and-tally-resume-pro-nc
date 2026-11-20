@@ -71,6 +71,8 @@ export type MessageRecord = {
   files: FileRef[];
   notes: string;
   handled: boolean;
+  /** Emails Nancy sent from the dashboard. */
+  sent?: LogEntry[];
 };
 
 export const messageKinds: Record<MessageKind, string> = {
@@ -88,6 +90,13 @@ export const orderKey = (id: string) => `order/${id}`;
 export const messageKey = (id: string) => `message/${id}`;
 export const fileKey = (id: string, name: string, now: Date) => `file/${id}/${now.getTime()}-${safeName(name)}`;
 export const safeName = (name: string) => name.replace(/[^\w.\- ]/g, "_").slice(0, 120) || "file";
+
+/** Adds calendar days to a YYYY-MM-DD date. */
+export function addDays(date: string, days: number): string {
+  const d = new Date(`${date}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
 
 /** Adds business days (Mon to Fri) to a YYYY-MM-DD date. */
 export function addBusinessDays(date: string, days: number): string {
@@ -167,7 +176,7 @@ const log = (o: OrderRecord, now: Date, what: string) => o.log.push({ at: now.to
 export function markPaid(o: OrderRecord, now: Date, draftDays: number): OrderRecord {
   o.paidAt = now.toISOString();
   o.status = "queued";
-  o.dueDate ??= addBusinessDays(localDateString(now, timeZone), draftDays);
+  o.dueDate ??= addDays(localDateString(now, timeZone), draftDays);
   log(o, now, "Payment received, added to the writing schedule");
   return o;
 }

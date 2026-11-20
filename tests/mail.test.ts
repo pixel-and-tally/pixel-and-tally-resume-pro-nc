@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { contactEmail, orderEmail, orderReceipt, send } from "../src/lib/mail";
+import { contactEmail, orderEmail, send } from "../src/lib/mail";
+import { questionnaireReceived } from "../src/lib/client-mail";
 import { parseOrder } from "../src/lib/forms";
 import type { Availability } from "../src/lib/schedule";
 import { services } from "../src/site";
@@ -29,7 +30,11 @@ describe("emails", () => {
     expect(e.subject).toBe("New order: Sam Lee, $295");
     expect(e.text).toContain("Cut costs 15%");
     expect(e.attachments?.[0]).toMatchObject({ filename: "Sam Resume.pdf", content: Buffer.from("hello").toString("base64") });
-    expect(orderReceipt(r.value, "nancy@example.com", "").text).toContain("I'll email you an invoice");
+    expect(questionnaireReceived("Sam Lee", 295, ["Entry Level Resume"], "nancy@example.com", "").text).toContain("I'll email you an invoice");
+    const paid = questionnaireReceived("Sam Lee", 295, ["Entry Level Resume"], "nancy@example.com", "https://paypal.example/x");
+    expect(paid.text).toContain("Hi Sam,");
+    expect(paid.text).toContain("Pay with PayPal or card: https://paypal.example/x");
+    expect(paid.html).toContain('<a href="https://paypal.example/x">');
   });
 
   it("sends through Resend and throws on failure", async () => {
