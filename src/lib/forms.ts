@@ -90,7 +90,7 @@ export const questionnaire = [
   { id: "strengths", label: "Strengths and skills" },
   { id: "education", label: "Education and training" },
   { id: "development", label: "Professional development" },
-  { id: "certifications", label: "Certifications and licenses" },
+  { id: "certifications", label: "Professional certifications and licensures" },
   { id: "publications", label: "Publications and presentations" },
   { id: "computer", label: "Computer skills" },
   { id: "languages", label: "Foreign languages" },
@@ -98,7 +98,7 @@ export const questionnaire = [
   {
     id: "achievements",
     label: "Career achievements and measurable results",
-    hint: "The most important part. Numbers help: dollars saved, sales grown, people trained, awards won.",
+    hint: "Vital information, and the most important part. Numbers help: dollars saved, sales grown, people trained, awards won.",
   },
 ] as const;
 
@@ -130,8 +130,10 @@ export function parseOrder(form: FormData, services: Service[]): Result<OrderVal
   if (priced.problems.length) invalid.push("services");
 
   const addr = { street: text(form, "street", 200), city: text(form, "city", 100), state: text(form, "state", 40), zip: text(form, "zip", 12) };
+  if (!addr.street) invalid.push("street");
   if (!addr.city) invalid.push("city");
   if (!addr.state) invalid.push("state");
+  if (!addr.zip) invalid.push("zip");
 
   const answers = Object.fromEntries(questionnaire.map((q) => [q.id, text(form, q.id)]));
   if (!answers.objective) invalid.push("objective");

@@ -88,11 +88,11 @@ const choice =
           <Field id="email" label="Email" type="email" autocomplete="email" required error="Enter an email I can reply to, like you@example.com." />
           <Field id="phone" label="Phone" type="tel" inputmode="tel" autocomplete="tel" error="Enter a phone number with area code, like 704-555-0123." />
           <Field id="linkedin" label="LinkedIn profile link" type="url" autocomplete="url" placeholder="linkedin.com/in/your-name" />
-          <Field id="street" label="Street address" autocomplete="street-address" class="sm:col-span-2" hint="Goes at the top of your resume. Leave it off if you prefer city and state only." />
+          <Field id="street" label="Street address" autocomplete="street-address" class="sm:col-span-2" required error="Enter your street address." />
           <Field id="city" label="City" autocomplete="address-level2" required error="Enter your city." />
           <div class="grid grid-cols-[1fr_1.2fr] gap-4">
             <Field id="state" label="State" autocomplete="address-level1" required error="Enter your state." maxlength={20} />
-            <Field id="zip" label="ZIP" autocomplete="postal-code" inputmode="numeric" maxlength={10} />
+            <Field id="zip" label="ZIP" autocomplete="postal-code" inputmode="numeric" maxlength={10} required error="Enter your ZIP code." />
           </div>
         </div>
       </fieldset>
@@ -134,7 +134,7 @@ const choice =
           </div>
           {
             Array.from({ length: maxJobs }, (_, i) => (
-              <div class="flex flex-col gap-1.5" data-job hidden={i > 1}>
+              <div class="flex flex-col gap-1.5" data-job hidden={i > 3}>
                 <label for={`job${i + 1}`} class="text-sm font-semibold">Job {i + 1}{i === 0 ? " (most recent)" : ""}</label>
                 <textarea id={`job${i + 1}`} name={`job${i + 1}`} rows="4" class="field"></textarea>
               </div>

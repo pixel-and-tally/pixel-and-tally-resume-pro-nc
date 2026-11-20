@@ -44,7 +44,7 @@ describe("parseReview", () => {
 });
 
 describe("parseOrder", () => {
-  const base = { name: "Sam Lee", email: "sam@example.com", city: "Belmont", state: "NC", objective: "Operations manager", resumeLevel: "management" };
+  const base = { name: "Sam Lee", email: "sam@example.com", street: "12 Main St", city: "Belmont", state: "NC", zip: "28012", objective: "Operations manager", resumeLevel: "management" };
   it("prices a valid order and keeps filled jobs in order", () => {
     const r = parseOrder(form({ ...base, addons: ["cover-letter"], job1: "Acme, 2020 to now", job3: "Old job" }), services);
     expect(r.ok && r.value.priced.total).toBe(550);
@@ -52,6 +52,6 @@ describe("parseOrder", () => {
   });
   it("lists every missing field", () => {
     const r = parseOrder(form({ name: "", email: "nope", resumeLevel: "" }), services);
-    expect(r).toMatchObject({ invalid: ["name", "email", "services", "city", "state", "objective"] });
+    expect(r).toMatchObject({ invalid: ["name", "email", "services", "street", "city", "state", "zip", "objective"] });
   });
 });

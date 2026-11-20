@@ -10,7 +10,7 @@ const now = new Date("2026-11-20T15:00:00Z"); // a Friday
 
 function order(extra: Record<string, string> = {}): OrderRecord {
   const f = new FormData();
-  Object.entries({ name: "Sam Lee", email: "sam@example.com", city: "Belmont", state: "NC", objective: "Ops manager", resumeLevel: "professional", ...extra }).forEach(([k, v]) => f.set(k, v));
+  Object.entries({ name: "Sam Lee", email: "sam@example.com", street: "12 Main St", city: "Belmont", state: "NC", zip: "28012", objective: "Ops manager", resumeLevel: "professional", ...extra }).forEach(([k, v]) => f.set(k, v));
   const r = parseOrder(f, services);
   if (!r.ok) throw new Error("expected a valid order");
   return orderFromForm(r.value, "2026-11-20-abc123", now, null);

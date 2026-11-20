@@ -21,7 +21,7 @@ describe("emails", () => {
 
   it("puts the order, answers and resume in the order email, and a receipt for the client", async () => {
     const f = new FormData();
-    Object.entries({ name: "Sam Lee", email: "sam@example.com", city: "Belmont", state: "NC", objective: "Ops manager", resumeLevel: "entry", achievements: "Cut costs 15%" }).forEach(([k, v]) => f.set(k, v));
+    Object.entries({ name: "Sam Lee", email: "sam@example.com", street: "12 Main St", city: "Belmont", state: "NC", zip: "28012", objective: "Ops manager", resumeLevel: "entry", achievements: "Cut costs 15%" }).forEach(([k, v]) => f.set(k, v));
     f.set("resume", new File(["hello"], "Sam Resume.pdf"));
     const r = parseOrder(f, services);
     if (!r.ok) throw new Error("expected a valid order");
