@@ -1,0 +1,18 @@
+---
+import Base from "../../../layouts/Base.astro";
+import PageHead from "../../../components/PageHead.astro";
+import PostList from "../../../components/PostList.astro";
+import { blogCategories } from "../../../site";
+import { slugify, sortedPosts } from "../../../lib/blog";
+
+export async function getStaticPaths() {
+  return blogCategories.map((c) => ({ params: { category: slugify(c) }, props: { name: c } }));
+}
+const { name } = Astro.props;
+const posts = (await sortedPosts()).filter((p) => p.data.categories.includes(name));
+---
+
+<Base title={`${name} | Career Tips`} description={`Career tips from Resume Pro NC: ${name}.`}>
+  <PageHead label="Career Tips" title={name} lead={`${posts.length} articles.`} />
+  <div class="mx-auto max-w-6xl px-4 py-12 sm:px-6"><PostList posts={posts} active={name} /></div>
+</Base>

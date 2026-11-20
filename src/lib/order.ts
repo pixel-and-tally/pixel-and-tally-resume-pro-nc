@@ -1,0 +1,45 @@
+// Order math, shared by the order page (live total) and the server (re-check).
+import type { Service } from "../site";
+
+export type Selection = { resume: string; addons: string[] };
+export type Priced = { lines: { name: string; price: number }[]; total: number; problems: string[] };
+
+export const money = (n: number) => `$${n.toLocaleString("en-US")}`;
+
+/**
+ * Prices a selection against the service list. Unknown ids are ignored.
+ * A cover letter needs a resume in the same order.
+ */
+export function priceOrder(sel: Selection, services: Service[]): Priced {
+  const byId = new Map(services.map((s) => [s.id, s]));
+  const resume = byId.get(sel.resume);
+  const picked: Service[] = [];
+  if (resume?.kind === "resume") picked.push(resume);
+  for (const id of new Set(sel.addons)) {
+    const s = byId.get(id);
+    if (s && s.kind !== "resume") picked.push(s);
+  }
+
+  const problems: string[] = [];
+  if (picked.length === 0) problems.push("empty");
+  if (picked.some((s) => s.id === "cover-letter") && !picked.some((s) => s.kind === "resume")) {
+    problems.push("cover-letter-needs-resume");
+  }
+
+  const lines = picked.map((s) => ({ name: s.name, price: s.price }));
+  return { lines, total: lines.reduce((sum, l) => sum + l.price, 0), problems };
+}
+
+/** PayPal "Buy Now" link for the exact total, or "" when no PayPal account is set. */
+export function paypalLink(business: string, total: number, item: string): string {
+  if (!business || total <= 0) return "";
+  const q = new URLSearchParams({
+    cmd: "_xclick",
+    business,
+    item_name: item,
+    amount: total.toFixed(2),
+    currency_code: "USD",
+    no_shipping: "1",
+  });
+  return `https://www.paypal.com/cgi-bin/webscr?${q}`;
+}

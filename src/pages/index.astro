@@ -1,0 +1,147 @@
+---
+import Base from "../layouts/Base.astro";
+import Section from "../components/Section.astro";
+import ResumeSheet from "../components/ResumeSheet.astro";
+import Steps from "../components/Steps.astro";
+import Testimonials from "../components/Testimonials.astro";
+import { getCollection } from "astro:content";
+import { freeOffers, services, site } from "../site";
+import { money } from "../lib/order";
+
+const posts = (await getCollection("blog")).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf()).slice(0, 3);
+const resumes = services.filter((s) => s.kind === "resume");
+const extras = services.filter((s) => s.kind !== "resume");
+---
+
+<Base>
+  <!-- Hero -->
+  <section class="overflow-hidden border-b border-rule">
+    <div class="mx-auto grid max-w-6xl items-center gap-14 px-4 pt-14 pb-20 sm:px-6 md:pt-20 lg:grid-cols-[1.05fr_1fr] lg:gap-20">
+      <div>
+        <p class="label">Entry level to executive</p>
+        <h1 class="mt-5 text-[2.75rem] leading-[1.05] sm:text-6xl">
+          Get noticed. <em class="text-accent">Get hired.</em>
+        </h1>
+        <p class="mt-6 max-w-xl text-lg leading-relaxed text-muted">
+          Resumes, LinkedIn profiles and cover letters written personally by {site.owner}. You bring the facts and
+          dates. I turn them into a resume that gets interviews.
+        </p>
+        <div class="mt-9 flex flex-col gap-3 sm:flex-row">
+          <a href="/order/" class="btn btn-primary">Start an order</a>
+          <a href="/free-resume-review/" class="btn btn-quiet">Get a free resume review</a>
+        </div>
+        <p class="mt-5 text-sm text-muted">
+          Prefer to talk first? <a href="/contact/#call" class="text-accent underline underline-offset-4">Book a free 30-minute phone consultation.</a>
+        </p>
+      </div>
+      <div class="px-4 sm:px-24 lg:px-0 lg:pr-10"><ResumeSheet /></div>
+    </div>
+  </section>
+
+  <Section label="Why it matters">
+    <div class="grid gap-10 lg:grid-cols-[1.2fr_1fr]">
+      <div>
+        <h2 class="text-3xl sm:text-4xl">A strong resume is everything.</h2>
+        <div class="mt-6 space-y-4 text-lg leading-relaxed text-muted">
+          <p>I get it. Job hunting is stressful. Writing about yourself can be overwhelming, and let's face it, a little awkward.</p>
+          <p>
+            So take a deep breath and relax. I've got you covered. Simply give me your information, facts and dates, and
+            I'll take it from there. It's that simple.
+          </p>
+        </div>
+        <a href="/about/" class="mt-6 inline-block font-semibold text-accent underline underline-offset-4">More about me</a>
+      </div>
+      <ul class="grid content-start gap-4 border-l border-rule pl-6 text-[0.97rem]">
+        <li><strong class="font-semibold">Written by me.</strong> <span class="text-muted">Never outsourced or automated.</span></li>
+        <li><strong class="font-semibold">First draft in {site.turnaround}.</strong> <span class="text-muted">Rush is possible, just ask.</span></li>
+        <li><strong class="font-semibold">Revisions until you're 100% happy.</strong> <span class="text-muted">Plus {site.revisionWindowDays} days of free changes after you approve.</span></li>
+        <li><strong class="font-semibold">Online or by phone.</strong> <span class="text-muted">We work the way you prefer.</span></li>
+      </ul>
+    </div>
+  </Section>
+
+  <Section label="Services" tone="sunk">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <h2 class="text-3xl sm:text-4xl">Pick your level. Add what you need.</h2>
+      <a href="/services/" class="font-semibold text-accent underline underline-offset-4">All services and pricing</a>
+    </div>
+    <div class="mt-10 grid gap-10 lg:grid-cols-2">
+      <div>
+        <p class="text-sm font-semibold text-muted">Resumes</p>
+        <ul class="mt-3 divide-y divide-rule border-y border-rule">
+          {
+            resumes.map((s) => (
+              <li class="flex items-baseline justify-between gap-6 py-4">
+                <div>
+                  <p class="font-display text-xl">{s.name}</p>
+                  <p class="mt-1 text-sm text-muted">{s.fit}</p>
+                </div>
+                <p class="font-display text-xl tabular-nums">{money(s.price)}</p>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+      <div>
+        <p class="text-sm font-semibold text-muted">Add-ons and coaching</p>
+        <ul class="mt-3 divide-y divide-rule border-y border-rule">
+          {
+            extras.map((s) => (
+              <li class="flex items-baseline justify-between gap-6 py-4">
+                <div>
+                  <p class="font-display text-xl">{s.name}</p>
+                  <p class="mt-1 text-sm text-muted">{s.note ?? s.fit}</p>
+                </div>
+                <p class="font-display text-xl tabular-nums">{money(s.price)}</p>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+    <ul class="mt-10 grid gap-4 sm:grid-cols-2">
+      {
+        freeOffers.map((o) => (
+          <li>
+            <a href={o.href} class="group flex h-full flex-col gap-2 rounded-card border border-rule bg-sheet p-6 transition-colors hover:border-accent">
+              <span class="label">Free</span>
+              <span class="font-display text-2xl group-hover:text-accent">{o.name}</span>
+              <span class="text-sm text-muted">{o.summary}</span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <Section label="How it works">
+    <h2 class="text-3xl sm:text-4xl">Four simple steps.</h2>
+    <div class="mt-10"><Steps /></div>
+    <a href="/order/" class="btn btn-primary mt-10">Start an order</a>
+  </Section>
+
+  <Section label="Clients say" tone="sunk" id="testimonials">
+    <h2 class="text-3xl sm:text-4xl">What people say.</h2>
+    <div class="mt-10"><Testimonials /></div>
+    {site.googleReviewsUrl && <a href={site.googleReviewsUrl} class="mt-8 inline-block font-semibold text-accent underline underline-offset-4">Read reviews on Google</a>}
+  </Section>
+
+  <Section label="Career tips">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <h2 class="text-3xl sm:text-4xl">Free advice for your search.</h2>
+      <a href="/career-tips/" class="font-semibold text-accent underline underline-offset-4">All career tips</a>
+    </div>
+    <ul class="mt-10 grid gap-6 md:grid-cols-3">
+      {
+        posts.map((p) => (
+          <li>
+            <a href={`/career-tips/${p.id}/`} class="group flex h-full flex-col gap-3 border-t-2 border-ink pt-5">
+              <span class="label !text-muted">{p.data.categories[0]}</span>
+              <span class="font-display text-xl leading-snug group-hover:text-accent">{p.data.title}</span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+</Base>

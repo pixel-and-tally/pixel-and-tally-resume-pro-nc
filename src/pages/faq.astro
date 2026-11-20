@@ -1,0 +1,32 @@
+---
+import Base from "../layouts/Base.astro";
+import PageHead from "../components/PageHead.astro";
+import { faqs } from "../site";
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
+};
+---
+
+<Base title="FAQ" description="How the resume process works, who writes it, turnaround time, the satisfaction guarantee, and how payment works.">
+  <script type="application/ld+json" slot="head" set:html={JSON.stringify(jsonLd)} />
+  <PageHead label="FAQ" title="Questions, answered." lead="Don't see yours? Call, email, or book a free phone consultation." />
+  <div class="mx-auto grid max-w-6xl gap-6 px-4 py-14 sm:px-6 md:grid-cols-[11rem_1fr] md:gap-12">
+    <div></div>
+    <div class="divide-y divide-rule border-y border-rule">
+      {
+        faqs.map((f, i) => (
+          <details class="group py-2" open={i === 0}>
+            <summary class="flex cursor-pointer list-none items-start justify-between gap-6 py-4 [&::-webkit-details-marker]:hidden">
+              <h2 class="font-display text-xl sm:text-2xl">{f.q}</h2>
+              <span class="mt-1 text-2xl leading-none text-accent transition-transform group-open:rotate-45" aria-hidden="true">+</span>
+            </summary>
+            <p class="max-w-3xl pb-5 leading-relaxed text-muted">{f.a}</p>
+          </details>
+        ))
+      }
+    </div>
+  </div>
+</Base>

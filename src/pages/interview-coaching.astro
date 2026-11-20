@@ -1,0 +1,51 @@
+---
+import Base from "../layouts/Base.astro";
+import Section from "../components/Section.astro";
+import { services, site } from "../site";
+import { money } from "../lib/order";
+const coaching = services.find((s) => s.id === "coaching")!;
+---
+
+<Base title="Interview Coaching" description={`One-hour Zoom interview coaching with Doug Burtch, a retired Fortune 500 executive, for ${money(coaching.price)}. You keep the recording.`}>
+  <div class="border-b border-rule">
+    <div class="mx-auto grid max-w-6xl items-center gap-12 px-4 py-14 sm:px-6 md:grid-cols-[1.3fr_1fr] md:py-20">
+      <div>
+        <p class="label">Interview Coaching</p>
+        <h1 class="mt-4 text-4xl sm:text-5xl">The right resume gets you in the door. The interview gets you the job.</h1>
+        <p class="mt-6 text-lg leading-relaxed text-muted">
+          Interviewing well doesn't come naturally. It's a strength you build through training and practice. Most of your competitors
+          never take the time to sharpen their interview skills, and they miss chances to stand out.
+        </p>
+        <div class="mt-8 flex flex-wrap items-center gap-5">
+          <a href="/order/?add=coaching" class="btn btn-primary">Book a session, {money(coaching.price)}</a>
+          <span class="text-sm text-muted">One hour on Zoom, recording included</span>
+        </div>
+      </div>
+      {site.dougPhoto && <img src={site.dougPhoto} alt="Doug Burtch, professional interview coach" width="480" height="600" class="aspect-[4/5] w-full max-w-xs justify-self-center rounded-card object-cover shadow-[var(--shadow-sheet)]" />}
+    </div>
+  </div>
+
+  <Section label="Why it matters">
+    <p class="max-w-3xl font-display text-2xl leading-snug sm:text-3xl">
+      The average interview lasts about 40 minutes, but recruiters and hiring managers often decide in the first 2 to 3.
+    </p>
+    <p class="mt-6 max-w-2xl leading-relaxed text-muted">
+      What you say is part of the equation. Your presentation, body language and other factors can make the difference between landing
+      the job of your dreams and missing out.
+    </p>
+  </Section>
+
+  <Section label="Your coach" tone="sunk">
+    <h2 class="text-3xl">Doug Burtch</h2>
+    <p class="mt-4 max-w-2xl leading-relaxed text-muted">
+      Doug is a retired Fortune 500 executive. He prepares clients for common and complex interview questions, helps them develop examples
+      of past accomplishments, build confidence and sharpen communication skills. He'll help you sell yourself and show employers how you
+      can be an asset to their company.
+    </p>
+    <ul class="mt-8 grid gap-4 sm:grid-cols-3">
+      <li class="rounded-card border border-rule bg-sheet p-5"><p class="font-display text-xl">One hour</p><p class="mt-1 text-sm text-muted">A focused session on Zoom.</p></li>
+      <li class="rounded-card border border-rule bg-sheet p-5"><p class="font-display text-xl">Your recording</p><p class="mt-1 text-sm text-muted">Review it as you prepare for interviews.</p></li>
+      <li class="rounded-card border border-rule bg-sheet p-5"><p class="font-display text-xl">{money(coaching.price)}</p><p class="mt-1 text-sm text-muted">Add it to a resume order or book it on its own.</p></li>
+    </ul>
+  </Section>
+</Base>

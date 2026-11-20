@@ -1,0 +1,86 @@
+---
+import Base from "../layouts/Base.astro";
+import PageHead from "../components/PageHead.astro";
+import Field from "../components/Field.astro";
+import CallPicker from "../components/CallPicker.astro";
+import { site } from "../site";
+import { honeypotField } from "../lib/forms";
+---
+
+<Base title="Contact" description="Questions about resume writing? Call, email, send a message, or book a free 30-minute phone consultation with Nancy Turner.">
+  <PageHead label="Contact" title="Let's talk about your next job." lead="I'd love the chance to earn your business and I welcome any questions. Send a message, book a free phone consultation, or call me directly." />
+
+  <div class="mx-auto grid max-w-6xl gap-12 px-4 py-14 sm:px-6 lg:grid-cols-[1fr_18rem]">
+    <form id="contact" method="POST" action="/api/contact" novalidate data-contact-form class="flex min-w-0 flex-col gap-10 rounded-card bg-sheet p-6 shadow-[var(--shadow-sheet)] sm:p-9">
+      <p class="hidden" aria-hidden="true"><label>Leave this empty: <input name={honeypotField} tabindex="-1" autocomplete="off" /></label></p>
+      <div data-form-error role="alert" tabindex="-1" hidden class="rounded-card border border-danger px-4 py-3 font-semibold text-danger"></div>
+
+      <CallPicker />
+
+      <fieldset class="flex min-w-0 flex-col gap-5 border-t border-rule pt-8">
+        <legend class="float-left mb-5 w-full font-display text-2xl">Your details</legend>
+        <div class="grid gap-5 sm:grid-cols-2">
+          <Field id="name" label="Name" autocomplete="name" required error="Tell me your name." />
+          <Field id="email" label="Email" type="email" autocomplete="email" required error="Enter an email I can reply to, like you@example.com." />
+          <Field id="phone" label="Phone" type="tel" inputmode="tel" autocomplete="tel" hint="Needed if you booked a call." error="Enter a phone number with area code so I can call you, like 704-555-0123." />
+          <Field id="subject" label="Subject" />
+        </div>
+        <Field id="message" label="Message" rows={5} hint="Needed unless you book a call above." error="Write a short message, or pick a call time above." />
+      </fieldset>
+
+      <div class="flex flex-col gap-2">
+        <button type="submit" class="btn btn-primary w-full sm:w-fit" data-submit-label>Send</button>
+        <p class="text-xs text-muted">I reply within one business day. Your details are only used to reply to you.</p>
+      </div>
+    </form>
+
+    <aside class="flex flex-col gap-8">
+      <div>
+        <p class="label">Call</p>
+        <ul class="mt-4 grid gap-4">
+          {site.phones.map((p) => (
+            <li><span class="block text-sm text-muted">{p.label}</span><a class="font-display text-2xl hover:text-accent" href={`tel:${p.number}`}>{p.number}</a></li>
+          ))}
+        </ul>
+      </div>
+      {site.email && (
+        <div>
+          <p class="label">Email</p>
+          <a class="mt-4 block break-all hover:text-accent" href={`mailto:${site.email}`}>{site.email}</a>
+        </div>
+      )}
+      <div class="border-t border-rule pt-6">
+        <p class="text-sm text-muted">Ready to go? <a href="/order/" class="text-accent underline underline-offset-4">Start your order</a> or <a href="/free-resume-review/" class="text-accent underline underline-offset-4">get a free review</a>.</p>
+      </div>
+    </aside>
+  </div>
+</Base>
+
+<script>
+  import { wireForm } from "../scripts/form";
+  const form = document.querySelector<HTMLFormElement>("[data-contact-form]");
+  if (form) {
+    const phone = form.querySelector<HTMLInputElement>("#phone")!;
+    const message = form.querySelector<HTMLTextAreaElement>("#message")!;
+    const button = form.querySelector<HTMLButtonElement>("[data-submit-label]")!;
+    const sync = () => {
+      const call = !!form.querySelector("input[name=callDate]:checked");
+      phone.required = call;
+      message.required = !call;
+      message.minLength = call ? 0 : 5;
+      button.textContent = call ? "Request my call" : "Send message";
+    };
+    form.addEventListener("call-change", sync);
+    form.addEventListener("change", sync);
+    sync();
+    wireForm(form, {
+      failMessage: "That didn't send. Please try again in a minute, or call 704-998-1088.",
+      extraChecks: () => {
+        const day = form.querySelector("input[name=callDate]:checked");
+        const time = form.querySelector("input[name=callTime]:checked");
+        return day && !time ? ["callTime"] : [];
+      },
+      successUrl: (d) => (d.get("callDate") ? "/thanks/?form=call" : "/thanks/?form=contact"),
+    });
+  }
+</script>

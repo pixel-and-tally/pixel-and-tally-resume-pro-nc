@@ -1,0 +1,77 @@
+---
+import Base from "../layouts/Base.astro";
+import PageHead from "../components/PageHead.astro";
+import Section from "../components/Section.astro";
+import { freeOffers, services, site } from "../site";
+import { money } from "../lib/order";
+
+const groups = [
+  { label: "Resumes", intro: "Choose the level that matches your experience.", items: services.filter((s) => s.kind === "resume") },
+  { label: "Add-ons", intro: "Order on their own or with a resume.", items: services.filter((s) => s.kind === "addon") },
+  { label: "Coaching", intro: "Get ready for the interview your resume earns.", items: services.filter((s) => s.kind === "coaching") },
+];
+const orderLink = (id: string, kind: string) => (kind === "resume" ? `/order/?resume=${id}` : `/order/?add=${id}`);
+---
+
+<Base title="Services & Pricing" description="Resume writing from $295, LinkedIn profiles $325, cover letters $55 and interview coaching $150. Personally written by Nancy Turner.">
+  <PageHead
+    label="Services & Pricing"
+    title="Clear prices. One writer."
+    lead={`Every document is written personally by ${site.owner}. Pick what you need, see the total, and pay by invoice once your order is in.`}
+  >
+    <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+      <a href="/order/" class="btn btn-primary">Start an order</a>
+      <a href="/free-resume-review/" class="btn btn-quiet">Not sure? Get a free review</a>
+    </div>
+  </PageHead>
+
+  {
+    groups.map((g, gi) => (
+      <Section label={g.label} tone={gi % 2 ? "sunk" : "paper"} id={g.label.toLowerCase()}>
+        <p class="text-muted">{g.intro}</p>
+        <ul class="mt-6 divide-y divide-rule border-y border-rule">
+          {g.items.map((s) => (
+            <li id={s.id} class="grid scroll-mt-24 gap-4 py-8 sm:grid-cols-[1fr_auto] sm:gap-10">
+              <div>
+                <h2 class="text-2xl sm:text-3xl">{s.name}</h2>
+                <p class="mt-2 text-sm font-semibold text-accent">{s.fit}</p>
+                <p class="mt-3 max-w-2xl leading-relaxed text-muted">{s.summary}</p>
+                {s.kind === "coaching" && (
+                  <a href="/interview-coaching/" class="mt-3 inline-block text-sm font-semibold underline underline-offset-4">
+                    Meet your coach
+                  </a>
+                )}
+              </div>
+              <div class="flex items-center justify-between gap-6 sm:flex-col sm:items-end sm:justify-start">
+                <p class="font-display text-4xl tabular-nums">{money(s.price)}</p>
+                {s.note && <p class="text-xs text-muted sm:-mt-4">{s.note}</p>}
+                <a href={orderLink(s.id, s.kind)} class="btn btn-quiet !py-2 text-sm">
+                  Order this
+                </a>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </Section>
+    ))
+  }
+
+  <Section label="Always free">
+    <ul class="grid gap-4 sm:grid-cols-2">
+      {
+        freeOffers.map((o) => (
+          <li>
+            <a href={o.href} class="group flex h-full flex-col gap-2 rounded-card border border-rule bg-sheet p-6 transition-colors hover:border-accent">
+              <span class="font-display text-2xl group-hover:text-accent">{o.name}</span>
+              <span class="text-sm text-muted">{o.summary}</span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+    <p class="mt-8 max-w-2xl text-sm leading-relaxed text-muted">
+      Every order includes revisions until you're 100% satisfied, then {site.revisionWindowDays} more days of free changes.
+      Typical turnaround is {site.turnaround}. Payment is by credit card, debit card or PayPal, and writing starts once it's received.
+    </p>
+  </Section>
+</Base>

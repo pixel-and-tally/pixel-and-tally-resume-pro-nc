@@ -1,0 +1,56 @@
+---
+// Hero picture: a resume page with an editor's margin notes, showing what Nancy
+// does to a resume. Pure HTML and CSS, decorative only.
+const bar = "h-2 rounded-full bg-ink/12";
+---
+
+<div class="relative mx-auto w-full max-w-[26rem]" aria-hidden="true">
+  <div class="absolute -right-3 -bottom-3 left-3 top-3 rounded-card bg-sunk"></div>
+  <div class="relative rounded-card bg-sheet p-7 shadow-[var(--shadow-sheet)] sm:p-9">
+    <div class="border-b border-rule pb-5">
+      <div class="h-4 w-40 rounded-full bg-ink"></div>
+      <div class="mt-3 flex gap-2"><div class={`${bar} w-24`}></div><div class={`${bar} w-20`}></div><div class={`${bar} w-16`}></div></div>
+    </div>
+
+    <div class="mt-5">
+      <p class="text-[0.6rem] font-bold tracking-[0.2em] text-accent uppercase">Summary</p>
+      <div class="mt-2.5 space-y-1.5">
+        <div class={`${bar} w-full`}></div>
+        <div class="relative w-[88%]">
+          <div class="h-2 rounded-full bg-mark"></div>
+        </div>
+        <div class={`${bar} w-[70%]`}></div>
+      </div>
+    </div>
+
+    <div class="mt-6">
+      <p class="text-[0.6rem] font-bold tracking-[0.2em] text-accent uppercase">Experience</p>
+      <div class="mt-2.5 flex justify-between"><div class="h-2.5 w-32 rounded-full bg-ink/70"></div><div class={`${bar} w-14`}></div></div>
+      <ul class="mt-3 space-y-2">
+        <li class="flex items-center gap-2"><span class="size-1.5 rounded-full bg-accent"></span><div class={`${bar} w-[85%]`}></div></li>
+        <li class="flex items-center gap-2"><span class="size-1.5 rounded-full bg-accent"></span><div class="h-2 w-[62%] rounded-full bg-accent/70"></div></li>
+        <li class="flex items-center gap-2"><span class="size-1.5 rounded-full bg-accent"></span><div class={`${bar} w-[74%]`}></div></li>
+      </ul>
+      <div class="mt-4 flex justify-between"><div class="h-2.5 w-28 rounded-full bg-ink/70"></div><div class={`${bar} w-14`}></div></div>
+      <ul class="mt-3 space-y-2">
+        <li class="flex items-center gap-2"><span class="size-1.5 rounded-full bg-accent"></span><div class={`${bar} w-[78%]`}></div></li>
+        <li class="flex items-center gap-2"><span class="size-1.5 rounded-full bg-accent"></span><div class={`${bar} w-[58%]`}></div></li>
+      </ul>
+    </div>
+
+    <div class="mt-6">
+      <p class="text-[0.6rem] font-bold tracking-[0.2em] text-accent uppercase">Education</p>
+      <div class="mt-2.5 space-y-1.5"><div class={`${bar} w-[66%]`}></div><div class={`${bar} w-[40%]`}></div></div>
+    </div>
+  </div>
+
+  <p class="absolute top-[7.6rem] -left-4 hidden -translate-x-full rotate-[-2deg] font-display text-[0.95rem] text-accent italic sm:block">
+    Lead with your value &rarr;
+  </p>
+  <p class="absolute top-[13.3rem] -left-4 hidden -translate-x-full rotate-[1.5deg] font-display text-[0.95rem] text-accent italic sm:block">
+    Show the result, with numbers &rarr;
+  </p>
+  <p class="absolute bottom-10 -left-4 hidden -translate-x-full rotate-[-1.5deg] font-display text-[0.95rem] text-accent italic sm:block">
+    Keywords that pass the scan &rarr;
+  </p>
+</div>

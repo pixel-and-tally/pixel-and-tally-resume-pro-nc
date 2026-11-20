@@ -1,0 +1,21 @@
+---
+import { testimonials } from "../site";
+interface Props { limit?: number }
+const { limit = testimonials.length } = Astro.props;
+---
+
+<ul class="grid gap-6 md:grid-cols-2">
+  {
+    testimonials.slice(0, limit).map((t) => (
+      <li class="flex flex-col justify-between gap-5 rounded-card border border-rule bg-sheet p-7">
+        <blockquote class="font-display text-[1.15rem] leading-relaxed">
+          <span class="text-accent">&ldquo;</span>{t.quote}<span class="text-accent">&rdquo;</span>
+        </blockquote>
+        <p class="text-sm font-semibold">
+          {t.name}
+          {"place" in t && t.place && <span class="font-normal text-muted">, {t.place}</span>}
+        </p>
+      </li>
+    ))
+  }
+</ul>
