@@ -8,12 +8,13 @@ export type SendConfig = { apiKey: string; to: string; from: string };
 type Attachment = { filename: string; content: string };
 export type Email = { subject: string; text: string; replyTo: string; attachments?: Attachment[] };
 
+const dashboardLine = (url: string) => (url ? ["", `Open it in your dashboard: ${url}`] : []);
 const section = (title: string, body: string) => (body ? `${title}\n${body}\n` : "");
 
 export const callLabel = (v: Pick<ContactValue, "callDate" | "callTime">) =>
   v.callDate ? `${formatDate(v.callDate)} at ${formatTime(v.callTime)} Eastern` : "";
 
-export function contactEmail(v: ContactValue, availability: Availability, now: Date): Email {
+export function contactEmail(v: ContactValue, availability: Availability, now: Date, dashboardUrl = ""): Email {
   const call = callLabel(v);
   const lines = [
     `Name: ${v.name}`,
@@ -24,6 +25,7 @@ export function contactEmail(v: ContactValue, availability: Availability, now: D
     "",
     v.message || "(No message)",
     ...(call ? ["", "The call isn't confirmed until you reply. The attached file adds it to your calendar."] : []),
+    ...dashboardLine(dashboardUrl),
   ];
   return {
     subject: call ? `Phone consultation request: ${v.name}, ${call}` : `Website message: ${v.subject || v.name}`,
@@ -52,7 +54,7 @@ export function contactEmail(v: ContactValue, availability: Availability, now: D
   };
 }
 
-export async function reviewEmail(v: ReviewValue): Promise<Email> {
+export async function reviewEmail(v: ReviewValue, dashboardUrl = ""): Promise<Email> {
   const file = await toAttachment(v.resume);
   return {
     subject: `Free resume review: ${v.name}`,
@@ -66,12 +68,13 @@ export async function reviewEmail(v: ReviewValue): Promise<Email> {
       v.notes,
       "",
       "Their resume is attached.",
+      ...dashboardLine(dashboardUrl),
     ].join("\n"),
     attachments: file ? [file] : undefined,
   };
 }
 
-export async function orderEmail(v: OrderValue): Promise<Email> {
+export async function orderEmail(v: OrderValue, dashboardUrl = ""): Promise<Email> {
   const file = await toAttachment(v.resume);
   const order = v.priced.lines.map((l) => `  ${l.name}: ${money(l.price)}`).join("\n");
   const answers = questionnaire
@@ -89,7 +92,8 @@ export async function orderEmail(v: OrderValue): Promise<Email> {
       `  Total: ${money(v.priced.total)}`,
       v.rush ? `  Deadline or rush request: ${v.rush}` : "",
       "",
-      "Send the invoice, then start writing once it's paid.",
+      "When the payment comes in, mark it paid in your dashboard. That emails them and puts them on your writing schedule.",
+      ...dashboardLine(dashboardUrl),
       "",
       "CONTACT",
       `Name: ${v.name}`,
@@ -102,6 +106,7 @@ export async function orderEmail(v: OrderValue): Promise<Email> {
       "QUESTIONNAIRE",
       answers,
       jobs ? `EMPLOYMENT HISTORY\n${jobs}` : "",
+      v.postings.length ? `JOB POSTINGS THEY'RE APPLYING FOR\n${v.postings.map((p) => `  ${p}`).join("\n")}\n` : "",
       file ? "Their current resume is attached." : "No resume attached.",
     ].join("\n"),
     attachments: file ? [file] : undefined,

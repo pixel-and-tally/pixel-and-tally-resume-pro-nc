@@ -9,4 +9,5 @@ npm run verify   # type check, tests, build
 ```
 
 Netlify environment variables: `RESEND_API_KEY`, `CONTACT_TO_EMAIL` (Nancy's inbox), and
-`CONTACT_FROM_EMAIL` once the domain is verified in Resend. See CLAUDE.md for how it fits together.
+`CONTACT_FROM_EMAIL` once the domain is verified in Resend, and `ADMIN_PASSWORD` for Nancy's dashboard at
+`/admin/` (orders and files are kept in Netlify Blobs, which needs no setup). See CLAUDE.md for how it fits together.

@@ -2,6 +2,8 @@ import { formEndpoint } from "../../lib/endpoint";
 import { parseOrder } from "../../lib/forms";
 import { orderEmail, orderReceipt } from "../../lib/mail";
 import { paypalLink } from "../../lib/order";
+import { newId, orderFromForm, orderKey, saveFile } from "../../lib/records";
+import { store } from "../../lib/store";
 import { services, site } from "../../site";
 
 export const prerender = false;
@@ -9,10 +11,17 @@ export const prerender = false;
 export const POST = formEndpoint({
   page: "/order/",
   parse: (form) => parseOrder(form, services),
-  emails: async (v, cfg) => {
+  save: async (v, now) => {
+    const s = store();
+    const id = newId(now);
+    const resume = v.resume ? await saveFile(s, id, v.resume, "Their current resume", now) : null;
+    await s.setJSON(orderKey(id), orderFromForm(v, id, now, resume));
+    return `/admin/orders/${id}/`;
+  },
+  emails: async (v, cfg, link) => {
     const item = `Resume Pro NC: ${v.priced.lines.map((l) => l.name).join(", ")}`;
     return [
-      { email: await orderEmail(v) },
+      { email: await orderEmail(v, link) },
       // The visitor's copy. If it fails, Nancy still has the order.
       { email: orderReceipt(v, cfg.to, paypalLink(site.paypalEmail, v.priced.total, item)), to: v.email, optional: true },
     ];

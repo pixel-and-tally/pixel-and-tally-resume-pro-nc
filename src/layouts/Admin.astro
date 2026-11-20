@@ -1,0 +1,47 @@
+---
+// Nancy's dashboard: no site header or footer, never indexed.
+import "../theme.css";
+interface Props {
+  title: string;
+  signedIn?: boolean;
+}
+const { title, signedIn = true } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{title} | Resume Pro NC dashboard</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
+  <body class="min-h-screen bg-paper text-ink">
+    <header class="border-b border-rule bg-sheet">
+      <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+        <a href="/admin/" class="inline-flex items-center gap-2.5">
+          <svg viewBox="0 0 32 32" class="size-7 shrink-0" aria-hidden="true">
+            <rect width="32" height="32" rx="6" class="fill-ink"></rect>
+            <path d="M10 7h9l4 4v14H10z" class="fill-paper"></path>
+            <path d="M19 7v4h4M13 15h7M13 18h7M13 21h4" fill="none" class="stroke-accent" stroke-width="1.5"></path>
+          </svg>
+          <span class="font-display text-lg leading-none">Nancy's desk</span>
+        </a>
+        {
+          signedIn && (
+            <div class="flex items-center gap-4 text-sm">
+              <a href="/" class="text-muted underline underline-offset-4">View website</a>
+              <form method="post" action="/admin/logout/">
+                <button class="font-semibold text-accent underline underline-offset-4">Log out</button>
+              </form>
+            </div>
+          )
+        }
+      </div>
+    </header>
+    <main class="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
+      <slot />
+    </main>
+  </body>
+</html>

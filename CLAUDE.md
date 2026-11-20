@@ -16,6 +16,12 @@ Rule from the rebuild: no feature of the old site may be lost. Look: clean and p
 - Forms: order (services + questionnaire + resume upload, replaces PayPal buttons + BoomForm),
   free resume review (upload), contact with an optional free phone consultation picker
   (`src/lib/schedule.ts`, ported from Pixel & Tally; no database, Nancy confirms by reply).
+- Nancy's dashboard (`/admin/`, server-rendered): password login (env `ADMIN_PASSWORD`, signed cookie,
+  `src/lib/auth.ts`). Every order, message, call request and free review is saved to Netlify Blobs
+  (`src/lib/store.ts`; in-memory in local dev) as records in `src/lib/records.ts`. Order steps: waiting on
+  payment, queued (paid, draft due `draftDays` business days later), writing, draft sent, delivered. Buttons email
+  the client (`src/lib/client-mail.ts`): payment received and scheduled, draft, final Word + PDF with which-to-use
+  advice and `reviewRequestUrl`. Saving never blocks a form: the email to Nancy still has everything.
 - Payment: PayPal button for the exact total (`paypalEmail` in `src/site.ts`, nancy@resumepronc.com)
   on the thank-you page and in the client's receipt. Empty `paypalEmail` switches all copy to "I email an invoice".
 - Blog ("Career Tips"): Markdown in `src/content/blog/`. `public/_redirects` maps every old Wix URL

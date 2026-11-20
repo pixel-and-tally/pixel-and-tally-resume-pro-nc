@@ -146,7 +146,7 @@ const choice =
 
       <!-- 4. Resume + timing -->
       <fieldset class={part}>
-        <legend class={`${legend} float-left w-full`}><span class="text-accent">4.</span> Your current resume</legend>
+        <legend class={`${legend} float-left w-full`}><span class="text-accent">4.</span> Your current resume and target jobs</legend>
         <div class="flex flex-col gap-1.5">
           <label for="resume" class="text-sm font-semibold">Attach your current resume <span class="font-normal text-muted">(optional)</span></label>
           <p id="resume-hint" class="text-xs text-muted">PDF or Word, up to {Math.round(maxUploadBytes / 1024 / 1024)} MB.</p>
@@ -156,6 +156,8 @@ const choice =
             class="field file:mr-4 file:rounded file:border-0 file:bg-accent-soft file:px-3 file:py-1.5 file:font-semibold file:text-accent" />
           <p id="resume-error" class="text-sm font-semibold text-danger" hidden></p>
         </div>
+        <Field id="postings" label="Job postings you're applying for" rows={4} placeholder="https://..."
+          hint="Paste a link to each posting, one per line. I'll match your resume to what they're asking for." />
         <Field id="rush" label="Deadline or rush request" hint={`Typical turnaround is ${site.turnaround}. Need it sooner? Tell me when.`} />
       </fieldset>
 

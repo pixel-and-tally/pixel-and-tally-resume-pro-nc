@@ -8,7 +8,9 @@ import type { Result } from "./forms";
 type Handler<T> = {
   page: string; // where the form lives, for no-JS error redirects
   parse: (form: FormData) => Result<T>;
-  emails: (value: T, cfg: SendConfig) => Promise<{ email: Email; to?: string; optional?: boolean }[]>;
+  /** Keeps the submission for Nancy's dashboard; returns its dashboard path. */
+  save?: (value: T, now: Date) => Promise<string>;
+  emails: (value: T, cfg: SendConfig, dashboardUrl: string) => Promise<{ email: Email; to?: string; optional?: boolean }[]>;
   thanks: (value: T) => string;
 };
 
@@ -35,8 +37,18 @@ export function formEndpoint<T>(h: Handler<T>) {
       return reply(503, { ok: false, error: "not_configured" }, back);
     }
 
+    // Save first, but never lose a submission over it: the email to Nancy has everything too.
+    let dashboardUrl = "";
+    if (h.save) {
+      try {
+        dashboardUrl = new URL(await h.save(result.value, new Date()), request.url).href;
+      } catch (err) {
+        console.error("Form: could not save to the dashboard", err);
+      }
+    }
+
     try {
-      for (const m of await h.emails(result.value, cfg)) {
+      for (const m of await h.emails(result.value, cfg, dashboardUrl)) {
         try {
           await send(m.email, cfg, m.to);
         } catch (err) {

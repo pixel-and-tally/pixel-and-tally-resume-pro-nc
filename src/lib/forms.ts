@@ -10,6 +10,7 @@ export const honeypotField = "company-website";
 export const maxUploadBytes = 4 * 1024 * 1024;
 export const uploadTypes = [".pdf", ".doc", ".docx", ".txt", ".rtf", ".odt", ".pages"];
 export const maxJobs = 8;
+export const maxPostings = 10;
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE = /^[\d\s().+-]{7,20}$/;
@@ -114,6 +115,8 @@ export type OrderValue = {
   rush: string;
   answers: Record<string, string>;
   jobs: string[];
+  /** Links (or titles) of the job postings they're applying for. */
+  postings: string[];
   priced: Priced;
   resume: File | null;
 };
@@ -135,6 +138,12 @@ export function parseOrder(form: FormData, services: Service[]): Result<OrderVal
 
   const jobs = Array.from({ length: maxJobs }, (_, i) => text(form, `job${i + 1}`)).filter(Boolean);
 
+  const postings = text(form, "postings")
+    .split(/\r?\n/)
+    .map((l) => l.trim().slice(0, 500))
+    .filter(Boolean)
+    .slice(0, maxPostings);
+
   const up = upload(form, "resume");
   if (up.bad) invalid.push("resume");
 
@@ -146,6 +155,7 @@ export function parseOrder(form: FormData, services: Service[]): Result<OrderVal
     rush: text(form, "rush", 300),
     answers,
     jobs,
+    postings,
     priced,
     resume: up.file,
   };

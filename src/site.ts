@@ -28,8 +28,12 @@ export const site = {
   /** Shown on the order thank-you page as a Pay with PayPal button. Empty = Nancy emails an invoice. */
   paypalEmail: "nancy@resumepronc.com",
   googleReviewsUrl: "",
+  /** Link clients use to leave Nancy a review (sent with the final files). Empty = the line is left out. */
+  reviewRequestUrl: "",
 
   turnaround: "5 to 7 business days",
+  /** Business days from payment to first draft, for the due date on Nancy's dashboard and the client's email. */
+  draftDays: 7,
   revisionWindowDays: 30,
 
   // Hero banner from the old home page (job seeker celebrating at a desk).

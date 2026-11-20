@@ -5,12 +5,12 @@ import netlify from "@astrojs/netlify";
 import sitemap from "@astrojs/sitemap";
 
 // Pages are prerendered to static HTML. Only routes that set `prerender = false`
-// (the three form endpoints under /api) run as Netlify functions.
+// (the form endpoints under /api and Nancy's dashboard under /admin) run as Netlify functions.
 export default defineConfig({
   site: "https://www.resumepronc.com",
   output: "static",
   adapter: netlify(),
-  integrations: [sitemap({ filter: (page) => !/\/(thanks|404)\/?$/.test(page) })],
+  integrations: [sitemap({ filter: (page) => !/\/(thanks|404)\/?$/.test(page) && !page.includes("/admin") })],
   trailingSlash: "ignore",
   build: { format: "directory" },
   image: { domains: ["static.wixstatic.com"] },
