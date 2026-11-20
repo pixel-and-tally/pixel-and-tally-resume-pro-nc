@@ -26,12 +26,14 @@ export const site = {
     { label: "Greenville, SC", number: "864-735-7123" },
   ],
   /** Shown on the order thank-you page as a Pay with PayPal button. Empty = Nancy emails an invoice. */
-  paypalEmail: "",
+  paypalEmail: "nancy@resumepronc.com",
   googleReviewsUrl: "",
 
   turnaround: "5 to 7 business days",
   revisionWindowDays: 30,
 
+  // Hero banner from the old home page (job seeker celebrating at a desk).
+  heroPhoto: wix("d45992_b10da7ac86e24885a753f59bc6e7b255~mv2.jpg", 2400, 1150),
   nancyPhoto: wix("13e2d0_5a17b775028849449f1869ed3741c4c9~mv2.jpg", 640, 800),
   dougPhoto: wix("d45992_de521611c8dc43b1baf747b14c20852e~mv2.jpg", 480, 600),
 } as const;
@@ -188,12 +190,13 @@ export const faqs = [
   },
   {
     q: "How and when do I pay?",
-    a: "After you place your order, I email you an invoice you can pay by credit card, debit card or PayPal. Writing starts once payment is received.",
+    a: site.paypalEmail
+      ? "Right after you place your order, you can pay securely through PayPal with a credit card, debit card or your PayPal account. You don't need a PayPal account. Writing starts once payment is received."
+      : "After you place your order, I email you an invoice you can pay by credit card, debit card or PayPal. Writing starts once payment is received.",
   },
 ];
 
-// Free phone consultation hours (Eastern). The old booking calendar offered weekday
-// mornings; confirm the real hours with Nancy.
+// Free phone consultation hours (Eastern), from Nancy 2026-11-20: Mon-Thu 8 AM to 6 PM, Fri 8 AM to 5 PM.
 export const availability: Availability = {
   timeZone: "America/New_York",
   callMinutes: 30,
@@ -201,11 +204,11 @@ export const availability: Availability = {
   noticeHours: 18,
   daysAhead: 14,
   weekly: {
-    1: [["09:00", "17:00"]],
-    2: [["09:00", "17:00"]],
-    3: [["09:00", "17:00"]],
-    4: [["09:00", "17:00"]],
-    5: [["09:00", "17:00"]],
+    1: [["08:00", "18:00"]],
+    2: [["08:00", "18:00"]],
+    3: [["08:00", "18:00"]],
+    4: [["08:00", "18:00"]],
+    5: [["08:00", "17:00"]],
   },
 };
 

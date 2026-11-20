@@ -16,7 +16,7 @@ import { site } from "../site";
         <span class="font-semibold">Total</span><span class="font-display text-3xl tabular-nums" data-total></span>
       </div>
       <p class="mt-5 text-sm text-muted" data-pay-note>I'll email you an invoice you can pay by credit card, debit card or PayPal. Writing starts once it's paid.</p>
-      <a data-pay hidden class="btn btn-primary mt-5" rel="noopener">Pay now with PayPal</a>
+      <a data-pay hidden class="btn btn-primary mt-5" rel="noopener">Pay with PayPal or card</a>
     </div>
 
     <div class="mt-12 flex flex-col gap-3 border-t border-rule pt-8 sm:flex-row">
@@ -35,7 +35,9 @@ import { site } from "../site";
   const lead = root.querySelector<HTMLElement>("[data-lead]")!;
   if (kind === "order") {
     title.textContent = "Thank you. Your order is in.";
-    lead.textContent = "I've emailed you a copy. Next, I'll review your details and send your invoice.";
+    lead.textContent = root.dataset.paypal
+      ? "I've emailed you a copy. Pay below to get started, and I'll be in touch once I've reviewed your details."
+      : "I've emailed you a copy. Next, I'll review your details and send your invoice.";
     const total = Number(p.get("total") ?? 0);
     const items = p.getAll("item");
     root.querySelector<HTMLElement>("[data-order]")!.hidden = false;
@@ -48,7 +50,7 @@ import { site } from "../site";
       const a = root.querySelector<HTMLAnchorElement>("[data-pay]")!;
       a.href = link;
       a.hidden = false;
-      root.querySelector<HTMLElement>("[data-pay-note]")!.textContent = "Pay now to get started, or wait for the emailed invoice.";
+      root.querySelector<HTMLElement>("[data-pay-note]")!.textContent = "Pay securely through PayPal by credit card, debit card or PayPal account. You don't need a PayPal account. Writing starts once payment is received.";
     }
   } else if (kind === "review") {
     title.textContent = "Thank you. Your resume is in.";

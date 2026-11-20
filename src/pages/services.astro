@@ -17,7 +17,7 @@ const orderLink = (id: string, kind: string) => (kind === "resume" ? `/order/?re
   <PageHead
     label="Services & Pricing"
     title="Clear prices. One writer."
-    lead={`Every document is written personally by ${site.owner}. Pick what you need, see the total, and pay by invoice once your order is in.`}
+    lead={`Every document is written personally by ${site.owner}. Pick what you need, see the total, and pay ${site.paypalEmail ? "through PayPal" : "by invoice"} once your order is in.`}
   >
     <div class="mt-8 flex flex-col gap-3 sm:flex-row">
       <a href="/order/" class="btn btn-primary">Start an order</a>

@@ -18,7 +18,7 @@ const choice =
   <PageHead
     label="Start an order"
     title="Your order, in one place."
-    lead="Choose your services, tell me about your experience, and attach your current resume. You see the total as you go, and I email an invoice once it's in."
+    lead={`Choose your services, tell me about your experience, and attach your current resume. You see the total as you go, ${site.paypalEmail ? "and pay securely through PayPal once your order is in." : "and I email an invoice once it's in."}`}
   />
 
   <div class="mx-auto grid max-w-6xl gap-12 px-4 py-14 sm:px-6 lg:grid-cols-[1fr_20rem]">
@@ -161,7 +161,7 @@ const choice =
 
       <div class="flex flex-col gap-3 border-t border-rule pt-10">
         <button type="submit" class="btn btn-primary w-full text-lg sm:w-fit">Place my order</button>
-        <p class="text-xs text-muted">Nothing is charged now. I'll email an invoice, and writing starts once it's paid. Your details are only used for your order.</p>
+        <p class="text-xs text-muted">{site.paypalEmail ? "Next you'll pay through PayPal by card or PayPal account, and writing starts once it's paid." : "Nothing is charged now. I'll email an invoice, and writing starts once it's paid."} Your details are only used for your order.</p>
       </div>
     </form>
 

@@ -16,8 +16,8 @@ Rule from the rebuild: no feature of the old site may be lost. Look: clean and p
 - Forms: order (services + questionnaire + resume upload, replaces PayPal buttons + BoomForm),
   free resume review (upload), contact with an optional free phone consultation picker
   (`src/lib/schedule.ts`, ported from Pixel & Tally; no database, Nancy confirms by reply).
-- Payment: invoice by email. Set `paypalEmail` in `src/site.ts` to also show a PayPal button for
-  the exact total on the thank-you page and in the client's receipt.
+- Payment: PayPal button for the exact total (`paypalEmail` in `src/site.ts`, nancy@resumepronc.com)
+  on the thank-you page and in the client's receipt. Empty `paypalEmail` switches all copy to "I email an invoice".
 - Blog ("Career Tips"): Markdown in `src/content/blog/`. `public/_redirects` maps every old Wix URL
   (pages and all 40 `/single-post/` links) to the new pages; `tests/redirects.test.ts` checks them.
 - Node 22. `npm run dev`, `npm run verify` (astro check + vitest + build). `astro preview` does not

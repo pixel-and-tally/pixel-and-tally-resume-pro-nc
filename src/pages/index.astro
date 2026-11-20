@@ -11,35 +11,71 @@ import { money } from "../lib/order";
 const posts = (await getCollection("blog")).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf()).slice(0, 3);
 const resumes = services.filter((s) => s.kind === "resume");
 const extras = services.filter((s) => s.kind !== "resume");
+const promises = [
+  { title: "Written by me.", body: "Never outsourced or automated." },
+  { title: `First draft in ${site.turnaround}.`, body: "Rush is possible." },
+  { title: "Revisions until you're 100% happy.", body: `Plus ${site.revisionWindowDays} days of free changes.` },
+  { title: "Online or by phone.", body: "We work the way you prefer." },
+];
 ---
 
 <Base>
-  <!-- Hero -->
-  <section class="overflow-hidden border-b border-rule">
-    <div class="mx-auto grid max-w-6xl items-center gap-14 px-4 pt-14 pb-20 sm:px-6 md:pt-20 lg:grid-cols-[1.05fr_1fr] lg:gap-20">
-      <div>
-        <p class="label">Entry level to executive</p>
-        <h1 class="mt-5 text-[2.75rem] leading-[1.05] sm:text-6xl">
-          Get noticed. <em class="text-accent">Get hired.</em>
-        </h1>
-        <p class="mt-6 max-w-xl text-lg leading-relaxed text-muted">
-          Resumes, LinkedIn profiles and cover letters written personally by {site.owner}. You bring the facts and
-          dates. I turn them into a resume that gets interviews.
-        </p>
-        <div class="mt-9 flex flex-col gap-3 sm:flex-row">
-          <a href="/order/" class="btn btn-primary">Start an order</a>
-          <a href="/free-resume-review/" class="btn btn-quiet">Get a free resume review</a>
-        </div>
-        <p class="mt-5 text-sm text-muted">
-          Prefer to talk first? <a href="/contact/#call" class="text-accent underline underline-offset-4">Book a free 30-minute phone consultation.</a>
-        </p>
+  <!-- Hero: same idea as the old front page, a full-width photo with the headline on it -->
+  <section class="relative isolate overflow-hidden bg-ink text-inverse">
+    {site.heroPhoto && (
+      <img src={site.heroPhoto} alt="" width="2400" height="1150" fetchpriority="high"
+        class="absolute inset-0 -z-10 size-full object-cover object-[70%_center]" />
+    )}
+    <div class="absolute inset-0 -z-10 bg-linear-to-r from-ink/90 via-ink/70 to-ink/20"></div>
+    <div class="mx-auto max-w-6xl px-4 py-20 sm:px-6 md:py-28 lg:py-32">
+      <p class="label !text-inverse/80">Entry level to executive</p>
+      <h1 class="mt-5 text-[2.75rem] leading-[1.05] text-inverse sm:text-6xl lg:text-7xl">
+        Get noticed.<br /><em>Get hired.</em>
+      </h1>
+      <p class="mt-6 max-w-md text-lg leading-relaxed text-inverse/90">Resumes, LinkedIn profiles and cover letters, written by me.</p>
+      <div class="mt-9 flex flex-col gap-3 sm:flex-row">
+        <a href="/order/" class="btn btn-primary">Start an order</a>
+        <a href="/services/" class="btn btn-quiet">Services and pricing</a>
+        <a href="/free-resume-review/" class="btn btn-quiet">Free resume review</a>
       </div>
-      <div class="px-4 sm:px-24 lg:px-0 lg:pr-10"><ResumeSheet /></div>
     </div>
   </section>
 
-  <Section label="Why it matters">
-    <div class="grid gap-10 lg:grid-cols-[1.2fr_1fr]">
+  <!-- Nancy, right under the banner (as on the old front page) -->
+  <section class="border-b border-rule">
+    <div class="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 sm:px-6 md:grid-cols-[auto_1fr] md:gap-14 md:py-20">
+      {site.nancyPhoto && (
+        <a href="/about/" class="shrink-0 justify-self-center md:justify-self-start">
+          <img src={site.nancyPhoto} alt={`${site.owner}, owner and writer at ${site.name}`} width="640" height="800" loading="eager"
+            class="size-48 rounded-full border-4 border-sheet object-cover object-top shadow-[var(--shadow-sheet)] md:size-64" />
+        </a>
+      )}
+      <div>
+        <p class="label">Let me tell you about myself</p>
+        <h2 class="mt-3 text-3xl sm:text-4xl">Hi, I'm Nancy, the Resume Pro.</h2>
+        <p class="mt-4 max-w-2xl text-lg leading-relaxed text-muted">
+          I love writing resumes and helping my clients land their dream job. I write resumes, LinkedIn profiles and
+          cover letters for every career level. You bring the facts and dates. I turn them into a resume that gets interviews.
+        </p>
+        <ul class="mt-7 grid max-w-2xl gap-x-8 gap-y-3 sm:grid-cols-2">
+          {promises.map((p) => (
+            <li class="flex gap-2.5">
+              <svg viewBox="0 0 16 16" class="mt-1 size-4 shrink-0 text-accent" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2" /></svg>
+              <span><strong class="font-semibold">{p.title}</strong> <span class="text-muted">{p.body}</span></span>
+            </li>
+          ))}
+        </ul>
+        <p class="mt-7 text-sm text-muted">
+          <a href="/about/" class="font-semibold text-accent underline underline-offset-4">More about me</a>
+          <span class="mx-2" aria-hidden="true">·</span>
+          Prefer to talk first? <a href="/contact/#call" class="text-accent underline underline-offset-4">Book a free 30-minute phone consultation.</a>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <Section label="Why it matters" tone="sunk">
+    <div class="grid items-center gap-14 lg:grid-cols-[1.1fr_1fr] lg:gap-20">
       <div>
         <h2 class="text-3xl sm:text-4xl">A strong resume is everything.</h2>
         <div class="mt-6 space-y-4 text-lg leading-relaxed text-muted">
@@ -49,18 +85,12 @@ const extras = services.filter((s) => s.kind !== "resume");
             I'll take it from there. It's that simple.
           </p>
         </div>
-        <a href="/about/" class="mt-6 inline-block font-semibold text-accent underline underline-offset-4">More about me</a>
       </div>
-      <ul class="grid content-start gap-4 border-l border-rule pl-6 text-[0.97rem]">
-        <li><strong class="font-semibold">Written by me.</strong> <span class="text-muted">Never outsourced or automated.</span></li>
-        <li><strong class="font-semibold">First draft in {site.turnaround}.</strong> <span class="text-muted">Rush is possible, just ask.</span></li>
-        <li><strong class="font-semibold">Revisions until you're 100% happy.</strong> <span class="text-muted">Plus {site.revisionWindowDays} days of free changes after you approve.</span></li>
-        <li><strong class="font-semibold">Online or by phone.</strong> <span class="text-muted">We work the way you prefer.</span></li>
-      </ul>
+      <div class="px-4 sm:px-16 lg:px-0"><ResumeSheet /></div>
     </div>
   </Section>
 
-  <Section label="Services" tone="sunk">
+  <Section label="Services">
     <div class="flex flex-wrap items-end justify-between gap-4">
       <h2 class="text-3xl sm:text-4xl">Pick your level. Add what you need.</h2>
       <a href="/services/" class="font-semibold text-accent underline underline-offset-4">All services and pricing</a>
@@ -114,19 +144,19 @@ const extras = services.filter((s) => s.kind !== "resume");
     </ul>
   </Section>
 
-  <Section label="How it works">
+  <Section label="How it works" tone="sunk">
     <h2 class="text-3xl sm:text-4xl">Four simple steps.</h2>
     <div class="mt-10"><Steps /></div>
     <a href="/order/" class="btn btn-primary mt-10">Start an order</a>
   </Section>
 
-  <Section label="Clients say" tone="sunk" id="testimonials">
+  <Section label="Clients say" id="testimonials">
     <h2 class="text-3xl sm:text-4xl">What people say.</h2>
     <div class="mt-10"><Testimonials /></div>
     {site.googleReviewsUrl && <a href={site.googleReviewsUrl} class="mt-8 inline-block font-semibold text-accent underline underline-offset-4">Read reviews on Google</a>}
   </Section>
 
-  <Section label="Career tips">
+  <Section label="Career tips" tone="sunk">
     <div class="flex flex-wrap items-end justify-between gap-4">
       <h2 class="text-3xl sm:text-4xl">Free advice for your search.</h2>
       <a href="/career-tips/" class="font-semibold text-accent underline underline-offset-4">All career tips</a>
