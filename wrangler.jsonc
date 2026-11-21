@@ -1,0 +1,23 @@
+// Cloudflare Workers config (free plan). Cloudflare builds with `npm run build`
+// and deploys with `npx wrangler deploy`. Static pages are served as assets
+// (with public/_redirects and public/_headers); the form endpoints, Nancy's
+// dashboard and the weekday morning run use the Worker (src/worker.ts).
+// Secrets (RESEND_API_KEY, CONTACT_TO_EMAIL, CONTACT_FROM_EMAIL, ADMIN_PASSWORD, SESSION_SECRET,
+// optional SITE_URL) are set in the Cloudflare dashboard: Workers & Pages > resume-pro-nc >
+// Settings > Variables and Secrets. Custom domain: Settings > Domains & Routes.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "resume-pro-nc",
+  "main": "./dist/_worker.js/index.js",
+  "compatibility_date": "2025-09-01",
+  // nodejs_compat (with a date after 2025-04-01) also fills process.env from the dashboard's variables.
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": { "binding": "ASSETS", "directory": "./dist", "not_found_handling": "404-page" },
+  // Keep variables set in the dashboard when a deploy runs.
+  "keep_vars": true,
+  // Orders, messages and uploaded files. No id needed: the first deploy creates the namespace and later deploys reuse it.
+  "kv_namespaces": [{ "binding": "STORE" }],
+  // Weekdays at 12:00 UTC: 7 AM Eastern in winter, 8 AM in summer.
+  "triggers": { "crons": ["0 12 * * 1-5"] },
+  "observability": { "enabled": true }
+}

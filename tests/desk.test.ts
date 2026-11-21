@@ -97,7 +97,7 @@ describe("numbers and clients", () => {
   });
 
   it("writes a morning email without em dashes", () => {
-    const d = morningDigest(agenda([order("u", "2026-11-10")], [], now), numbers([], now), "https://x.netlify.app/admin/", now);
+    const d = morningDigest(agenda([order("u", "2026-11-10")], [], now), numbers([], now), "https://x.workers.dev/admin/", now);
     expect(d.subject).toBe("Your day: 1 coming up");
     expect(d.text).toContain("Friday, November 20");
     expect(d.text).not.toContain("—");

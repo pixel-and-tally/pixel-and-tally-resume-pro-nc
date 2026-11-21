@@ -118,7 +118,7 @@ if (Astro.request.method === "POST" && sameOrigin(Astro.request)) {
     }
   } catch (err) {
     console.error("Dashboard action failed", err);
-    formError = canEmail ? "The email didn't send. Nothing was changed. Try again in a minute." : "Email isn't set up yet (RESEND_API_KEY in Netlify), so nothing was sent.";
+    formError = canEmail ? "The email didn't send. Nothing was changed. Try again in a minute." : "Email isn't set up yet (RESEND_API_KEY in Cloudflare), so nothing was sent.";
   }
 
   if (Object.keys(errors).length) formError ||= "Fix the highlighted field below.";

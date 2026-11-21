@@ -41,7 +41,7 @@ if (Astro.request.method === "POST" && sameOrigin(Astro.request)) {
   if (preview && !Object.keys(errors).length) {
     // Just refresh the link and the text button.
   } else if (!Object.keys(errors).length) {
-    if (!cfg.apiKey) formError = "Email isn't set up yet (RESEND_API_KEY in Netlify), so nothing was sent. You can still text the link below.";
+    if (!cfg.apiKey) formError = "Email isn't set up yet (RESEND_API_KEY in Cloudflare), so nothing was sent. You can still text the link below.";
     else {
       try {
         const first = v.name.split(/\s+/)[0];

@@ -7,7 +7,7 @@ import { messageFromContact, messageKey, newId } from "../../lib/records";
 import { store } from "../../lib/store";
 import { availability, site } from "../../site";
 
-// Runs as a Netlify function; every other page is static HTML.
+// Runs in the Cloudflare Worker; every other page is static HTML.
 export const prerender = false;
 
 export const POST = formEndpoint({

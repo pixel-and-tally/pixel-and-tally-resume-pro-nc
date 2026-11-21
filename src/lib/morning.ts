@@ -1,4 +1,4 @@
-// The morning run (weekdays, from netlify/functions/morning.mts):
+// The morning run (weekdays, from the cron trigger in wrangler.jsonc via src/morning-run.ts):
 // 1. One friendly payment reminder, in Nancy's own wording, to anyone whose
 //    questionnaire has sat unpaid for `autoReminderDays`. It only ever goes once;
 //    after that, the Today list suggests a call or text instead.
@@ -16,7 +16,7 @@ export type MorningOptions = {
   mail: SendConfig;
   now: Date;
   siteUrl: string;
-  /** Where the dashboard lives right now (Netlify's URL until the domain moves). */
+  /** Where the dashboard lives right now (the workers.dev URL until the domain moves). */
   dashboardUrl: string;
   paypalEmail: string;
   nancy: string;

@@ -4,7 +4,7 @@ import { contactReceived, reviewReceived } from "../src/lib/client-mail";
 
 describe("phone calendar link", () => {
   it("is signed, and a changed time is refused", () => {
-    const url = new URL(callIcsUrl("https://resumepronc.netlify.app", "abc", "2026-11-24", "10:00", "secret"));
+    const url = new URL(callIcsUrl("https://resume-pro-nc.example.workers.dev", "abc", "2026-11-24", "10:00", "secret"));
     expect(url.pathname).toBe("/api/call.ics");
     const s = url.searchParams.get("s")!;
     expect(validCallLink("abc", "2026-11-24", "10:00", s, "secret")).toBe(true);
