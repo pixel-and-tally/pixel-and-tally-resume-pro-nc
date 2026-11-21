@@ -63,9 +63,9 @@ export function parseContact(form: FormData, availability: Availability, now: Da
   if (wantsCall) {
     if (!isBookable(value.callDate, value.callTime, availability, now)) invalid.push("callTime");
     if (!value.phone) invalid.push("phone");
-  } else if (value.message.length < 5) {
-    invalid.push("message");
   }
+  // Always needed, so Nancy has some background before she replies or calls.
+  if (value.message.length < 20) invalid.push("message");
   return invalid.length ? { ok: false, spam: false, invalid } : { ok: true, value };
 }
 

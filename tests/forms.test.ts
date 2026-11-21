@@ -19,12 +19,14 @@ const pdf = (bytes = 10) => new File([new Uint8Array(bytes)], "resume.pdf", { ty
 describe("parseContact", () => {
   const base = { name: "Sam Lee", email: "sam@example.com", message: "Do you write federal resumes?" };
   it("accepts a message", () => expect(parseContact(form(base), cfg, now).ok).toBe(true));
-  it("needs a message when no call is booked", () => {
+  it("always needs a message with some background", () => {
     expect(parseContact(form({ ...base, message: "" }), cfg, now)).toMatchObject({ invalid: ["message"] });
+    expect(parseContact(form({ ...base, message: "Call pls" }), cfg, now)).toMatchObject({ invalid: ["message"] });
   });
   it("needs an open time and a phone number for a call", () => {
-    const call = { ...base, message: "", callDate: "2026-10-19", callTime: "10:00" };
+    const call = { ...base, callDate: "2026-10-19", callTime: "10:00" };
     expect(parseContact(form(call), cfg, now)).toMatchObject({ invalid: ["phone"] });
+    expect(parseContact(form({ ...call, phone: "704-555-0123", message: "" }), cfg, now)).toMatchObject({ invalid: ["message"] });
     expect(parseContact(form({ ...call, phone: "704-555-0123" }), cfg, now).ok).toBe(true);
     expect(parseContact(form({ ...call, phone: "704-555-0123", callTime: "15:00" }), cfg, now)).toMatchObject({ invalid: ["callTime"] });
   });

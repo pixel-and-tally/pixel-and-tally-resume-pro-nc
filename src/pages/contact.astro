@@ -25,7 +25,7 @@ import { honeypotField } from "../lib/forms";
           <Field id="phone" label="Phone" type="tel" inputmode="tel" autocomplete="tel" hint="Needed if you booked a call." error="Enter a phone number with area code so I can call you, like 704-555-0123." />
           <Field id="subject" label="Subject" />
         </div>
-        <Field id="message" label="Message" rows={5} hint="Needed unless you book a call above." error="Write a short message, or pick a call time above." />
+        <Field id="message" label="Message" rows={5} required minlength={20} hint="Give me a little background so I can prepare: what job you're going after, where you are in your career, and what you need help with." placeholder="Example: I'm a nurse with 8 years in the ER and want to move into a clinical manager role. My resume hasn't been updated since 2019 and I'd like a new resume and cover letter." error="Tell me a little about what you're looking for, at least a sentence or two." />
       </fieldset>
 
       <div class="flex flex-col gap-2">

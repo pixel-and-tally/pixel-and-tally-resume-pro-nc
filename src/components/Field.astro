@@ -13,8 +13,9 @@ interface Props {
   class?: string;
   inputmode?: "text" | "tel" | "email" | "numeric" | "url";
   maxlength?: number;
+  minlength?: number;
 }
-const { id, label, type = "text", autocomplete = "off", required = false, error, hint, rows, placeholder, class: cls = "", inputmode, maxlength } = Astro.props;
+const { id, label, type = "text", autocomplete = "off", required = false, error, hint, rows, placeholder, class: cls = "", inputmode, maxlength, minlength } = Astro.props;
 const described = [hint && `${id}-hint`, `${id}-error`].filter(Boolean).join(" ");
 ---
 
@@ -26,7 +27,7 @@ const described = [hint && `${id}-hint`, `${id}-error`].filter(Boolean).join(" "
   {hint && <p id={`${id}-hint`} class="-mt-0.5 text-xs text-muted">{hint}</p>}
   {
     rows ? (
-      <textarea {id} name={id} {rows} {required} {placeholder} {autocomplete} data-error={error} aria-describedby={described} class="field" />
+      <textarea {id} name={id} {rows} {required} {minlength} {placeholder} {autocomplete} data-error={error} aria-describedby={described} class="field" />
     ) : (
       <input {id} name={id} {type} {autocomplete} {required} {placeholder} {inputmode} {maxlength} data-error={error} aria-describedby={described} class="field" />
     )
