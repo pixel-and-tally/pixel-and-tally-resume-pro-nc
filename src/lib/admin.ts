@@ -6,7 +6,7 @@ export const isAdmin = (cookies: AstroCookies) => validSession(cookies.get(sessi
 
 export const fileTypes = [".pdf", ".doc", ".docx"];
 export const maxFileBytes = 4 * 1024 * 1024;
-/** Netlify caps a request at 6 MB, so both final files together stay under that. */
+/** Kept small (6 MB for both final files) so uploads stay quick and well under Cloudflare's limits. */
 export const maxTotalBytes = 5.5 * 1024 * 1024;
 
 /** A file from the form, or why it can't be used. */

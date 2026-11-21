@@ -26,7 +26,7 @@ if (Astro.request.method === "POST" && sameOrigin(Astro.request)) {
     replyBody = String(form.get("body") ?? "").slice(0, 10000);
     const cfg = mailConfig();
     if (replyBody.trim().length < 10) replyError = "Write the email before sending.";
-    else if (!cfg.apiKey) replyError = "Email isn't set up yet (RESEND_API_KEY in Netlify), so nothing was sent.";
+    else if (!cfg.apiKey) replyError = "Email isn't set up yet (RESEND_API_KEY in Cloudflare), so nothing was sent.";
     else {
       try {
         await send(inquiryEmail(replyBody, cfg.to || site.email), cfg, m.email);

@@ -10,15 +10,16 @@ Rule from the rebuild: no feature of the old site may be lost. Look: clean and p
 ## Stack
 
 - Astro 5 static site, Tailwind 4 (CSS-first tokens in `src/theme.css`), TypeScript strict.
-- Netlify free plan (`@astrojs/netlify`, `netlify.toml`). Pages are static; only `src/pages/api/*`
-  run as functions. They email Nancy through Resend (env: `RESEND_API_KEY`, `CONTACT_TO_EMAIL`,
+- Cloudflare Workers free plan (`@astrojs/cloudflare`, `wrangler.jsonc`, entry `src/worker.ts`, headers in
+  `public/_headers`; moved off Netlify 2026-11-21). Pages are static assets; only `src/pages/api/*` and `/admin/`
+  run in the Worker. Env vars come from `process.env` (filled by `nodejs_compat`). They email Nancy through Resend (env: `RESEND_API_KEY`, `CONTACT_TO_EMAIL`,
   optional `CONTACT_FROM_EMAIL`). Validation lives in `src/lib/forms.ts`, emails in `src/lib/mail.ts`.
 - Forms: order (services + questionnaire + resume upload, replaces PayPal buttons + BoomForm),
   free resume review (upload), contact with an optional free phone consultation picker
   (`src/lib/schedule.ts`, ported from Pixel & Tally; no database, Nancy confirms by reply).
 - Nancy's dashboard (`/admin/`, server-rendered): password login (env `ADMIN_PASSWORD`, signed cookie,
-  `src/lib/auth.ts`). Every order, message, call request and free review is saved to Netlify Blobs
-  (`src/lib/store.ts`; in-memory in local dev) as records in `src/lib/records.ts`. Order steps: waiting on
+  `src/lib/auth.ts`). Every order, message, call request and free review is saved to Workers KV
+  (`STORE` binding, `src/lib/store.ts`; in-memory in local dev) as records in `src/lib/records.ts`. Order steps: waiting on
   payment, queued (paid, draft due `draftDays` business days later), writing, draft sent, delivered. Client emails
   (`src/lib/client-mail.ts`) are Nancy's own wording from her real emails, keep it: questionnaire received + payment
   link (automatic), Resume Information (inquiry reply, editable), Received Payment, Resume Draft, final Word + PDF
@@ -26,7 +27,7 @@ Rule from the rebuild: no feature of the old site may be lost. Look: clean and p
 - Dashboard home is "Today" (`src/lib/desk.ts`): overdue and due drafts, unconfirmed calls, unanswered messages, unpaid orders,
   quiet drafts and a 30-day "how's the search going?" check-in, each with Call / Text / Open, plus this month's numbers.
   Clients tab and `/admin/clients/<email>/` join every order, message, file and note per email. Weekday 7 AM ET
-  `netlify/functions/morning.mts` (scheduled, free) emails Nancy the Today list and sends ONE automatic payment reminder
+  `src/morning-run.ts` (Cloudflare cron trigger in `wrangler.jsonc`, free) emails Nancy the Today list and sends ONE automatic payment reminder
   per order unpaid `autoPaymentReminderDays` (site.ts; 0 = off). Everything else to clients stays Nancy's click.
 - Payment: "Check out" on the order form saves the order, then sends the client to PayPal for the exact total
   (`paypalEmail` in `src/site.ts`, nancy@resumepronc.com), with the order id as `custom`. PayPal reports the payment to
@@ -34,8 +35,8 @@ Rule from the rebuild: no feature of the old site may be lost. Look: clean and p
   After a phone call Nancy sends the order link from `/admin/send-link/` (email, or a one-tap text). Empty `paypalEmail` switches all copy to "I email an invoice".
 - Blog ("Career Tips"): Markdown in `src/content/blog/`. `public/_redirects` maps every old Wix URL
   (pages and all 40 `/single-post/` links) to the new pages; `tests/redirects.test.ts` checks them.
-- Node 22. `npm run dev`, `npm run verify` (astro check + vitest + build). `astro preview` does not
-  work with the Netlify adapter; serve `dist/` with any static server to look at a build.
+- Node 22. `npm run dev`, `npm run verify` (astro check + vitest + build). To run a build locally
+  on Cloudflare's runtime: `npm run build && npx wrangler dev` (secrets in `.dev.vars`).
 
 ## Rules
 

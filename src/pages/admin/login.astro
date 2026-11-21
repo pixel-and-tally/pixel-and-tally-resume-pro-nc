@@ -30,7 +30,7 @@ if (Astro.request.method === "POST" && sameOrigin(Astro.request)) {
   <div class="mx-auto max-w-sm rounded-card border border-rule bg-sheet p-6 shadow-[var(--shadow-sheet)] sm:p-8">
     <h1 class="text-3xl">Log in</h1>
     <p class="mt-2 text-sm text-muted">Your orders, messages and files, all in one place.</p>
-    {!cfg.password && <p class="mt-4 rounded bg-mark p-3 text-sm">The dashboard password isn't set yet. Add ADMIN_PASSWORD in Netlify's environment variables.</p>}
+    {!cfg.password && <p class="mt-4 rounded bg-mark p-3 text-sm">The dashboard password isn't set yet. Add ADMIN_PASSWORD in Cloudflare (Settings > Variables and Secrets).</p>}
     {error && <p role="alert" class="mt-4 text-sm font-semibold text-danger">{error}</p>}
     <form method="post" class="mt-6 flex flex-col gap-4">
       <input type="text" name="username" value="nancy" autocomplete="username" hidden />
