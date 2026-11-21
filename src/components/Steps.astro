@@ -2,10 +2,10 @@
 import { steps } from "../site";
 ---
 
-<ol class="grid gap-px overflow-hidden rounded-card border border-rule bg-rule sm:grid-cols-2 lg:grid-cols-4">
+<ol class="grid gap-px overflow-hidden rounded-card border border-rule bg-rule sm:grid-cols-2 lg:grid-cols-5">
   {
     steps.map((s, i) => (
-      <li class="flex flex-col gap-3 bg-sheet p-6">
+      <li class="flex flex-col gap-3 bg-sheet p-6 sm:last:odd:col-span-2 lg:last:odd:col-span-1">
         <span class="font-display text-3xl text-accent">{String(i + 1).padStart(2, "0")}</span>
         <h3 class="text-xl">{s.title}</h3>
         <p class="text-sm leading-relaxed text-muted">{s.body}</p>
