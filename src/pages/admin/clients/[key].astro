@@ -1,0 +1,122 @@
+---
+// One client, everything in one place: every order and message they've sent,
+// every file, and the whole history, newest first.
+import Admin from "../../../layouts/Admin.astro";
+import { isAdmin, smsLink, telLink } from "../../../lib/admin";
+import { clientKey, clients } from "../../../lib/desk";
+import { money } from "../../../lib/order";
+import { formatDay, formatStamp, listMessages, listOrders, messageKinds, statuses, type FileRef } from "../../../lib/records";
+import { store } from "../../../lib/store";
+
+export const prerender = false;
+
+if (!isAdmin(Astro.cookies)) return Astro.redirect("/admin/login/");
+
+const s = store();
+const key = clientKey(decodeURIComponent(Astro.params.key ?? ""));
+const [orders, messages] = await Promise.all([listOrders(s), listMessages(s)]);
+const c = clients(orders, messages).find((x) => x.key === key);
+if (!c) return new Response("Client not found", { status: 404 });
+
+const files: (FileRef & { from: string })[] = [
+  ...c.orders.flatMap((o) => o.files.map((f) => ({ ...f, from: o.lines.map((l) => l.name).join(", ") }))),
+  ...c.messages.flatMap((m) => m.files.map((f) => ({ ...f, from: messageKinds[m.kind] }))),
+].sort((a, b) => b.at.localeCompare(a.at));
+
+const timeline = [
+  ...c.orders.flatMap((o) => o.log.map((l) => ({ ...l, href: `/admin/orders/${o.id}/` }))),
+  ...c.messages.flatMap((m) => [
+    { at: m.createdAt, what: `${messageKinds[m.kind]} came in${m.callAt ? ` (asked for ${m.callAt})` : ""}`, href: `/admin/messages/${m.id}/` },
+    ...(m.sent ?? []).map((x) => ({ ...x, href: `/admin/messages/${m.id}/` })),
+  ]),
+].sort((a, b) => b.at.localeCompare(a.at));
+
+const notes = [...c.orders.filter((o) => o.notes.trim()).map((o) => ({ what: o.lines.map((l) => l.name).join(", "), text: o.notes, href: `/admin/orders/${o.id}/` })),
+  ...c.messages.filter((m) => m.notes.trim()).map((m) => ({ what: messageKinds[m.kind], text: m.notes, href: `/admin/messages/${m.id}/` }))];
+
+const box = "rounded-card border border-rule bg-sheet p-5 sm:p-6";
+const h2 = "font-display text-2xl";
+const link = "text-accent underline underline-offset-4";
+---
+
+<Admin title={c.name}>
+  <a href="/admin/?view=clients" class={`text-sm font-semibold ${link}`}>All clients</a>
+  <p class="label mt-6">Client</p>
+  <h1 class="mt-2 text-3xl sm:text-4xl">{c.name}</h1>
+  <p class="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-muted">
+    <a href={`mailto:${c.email}`} class={link}>{c.email}</a>
+    {c.phone && <span>{c.phone} · <a href={telLink(c.phone)} class={link}>Call</a> · <a href={smsLink(c.phone)} class={link}>Text</a></span>}
+  </p>
+  <p class="mt-2 text-sm text-muted">
+    {c.orders.length} order{c.orders.length === 1 ? "" : "s"} · {c.messages.length} message{c.messages.length === 1 ? "" : "s"}{c.spent > 0 && ` · ${money(c.spent)} paid`}
+  </p>
+
+  <div class="mt-8 grid gap-6 lg:grid-cols-[1fr_22rem]">
+    <div class="flex flex-col gap-6">
+      <section class={box} aria-labelledby="orders">
+        <h2 id="orders" class={h2}>Orders</h2>
+        {c.orders.length ? (
+          <ul class="mt-4 divide-y divide-rule">
+            {c.orders.map((o) => (
+              <li class="py-3 first:pt-0 last:pb-0">
+                <a href={`/admin/orders/${o.id}/`} class="font-semibold underline-offset-4 hover:underline">{o.lines.map((l) => l.name).join(", ")}</a>
+                <p class="text-sm text-muted">
+                  {statuses[o.status]} · {money(o.total)} · ordered {formatStamp(o.createdAt)}
+                  {o.dueDate && ["queued", "writing"].includes(o.status) && ` · draft due ${formatDay(o.dueDate)}`}
+                  {o.draftCount > 0 && ` · ${o.draftCount} draft${o.draftCount === 1 ? "" : "s"} sent`}
+                </p>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div class="mt-3 flex flex-wrap items-center gap-4">
+            <p class="text-sm text-muted">No orders yet.</p>
+            <a href={`/admin/send-link/?from=${c.messages[0]?.id ?? ""}`} class="btn btn-quiet">Send the order link</a>
+          </div>
+        )}
+      </section>
+
+      {c.messages.length > 0 && (
+        <section class={box} aria-labelledby="messages">
+          <h2 id="messages" class={h2}>Messages</h2>
+          <ul class="mt-4 divide-y divide-rule">
+            {c.messages.map((m) => (
+              <li class="py-3 first:pt-0 last:pb-0">
+                <a href={`/admin/messages/${m.id}/`} class="font-semibold underline-offset-4 hover:underline">{messageKinds[m.kind]}{m.subject && `: ${m.subject}`}</a>
+                <p class="line-clamp-2 text-sm text-muted">{formatStamp(m.createdAt)} · {m.handled ? "Handled" : "Not handled yet"}{m.body && ` · ${m.body}`}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <section class={box} aria-labelledby="history">
+        <h2 id="history" class={h2}>Everything, newest first</h2>
+        <ol class="mt-4 flex flex-col gap-3 text-sm">
+          {timeline.map((t) => <li><a href={t.href} class="underline-offset-4 hover:underline">{t.what}</a><p class="text-xs text-muted">{formatStamp(t.at)}</p></li>)}
+        </ol>
+      </section>
+    </div>
+
+    <aside class="flex flex-col gap-6">
+      <section class={box} aria-labelledby="files">
+        <h2 id="files" class={h2}>Files</h2>
+        {files.length ? (
+          <ul class="mt-4 flex flex-col gap-3 text-sm">
+            {files.map((f) => (
+              <li><a href={`/admin/files/${f.key.replace(/^file\//, "")}`} class={`font-semibold ${link}`}>{f.label}</a><br /><span class="text-muted">{f.filename} · {formatStamp(f.at)}</span></li>
+            ))}
+          </ul>
+        ) : <p class="mt-3 text-sm text-muted">No files yet.</p>}
+      </section>
+      {notes.length > 0 && (
+        <section class={box} aria-labelledby="notes">
+          <h2 id="notes" class={h2}>Your notes</h2>
+          <ul class="mt-4 flex flex-col gap-4 text-sm">
+            {notes.map((n) => <li><a href={n.href} class="font-semibold underline-offset-4 hover:underline">{n.what}</a><p class="mt-1 whitespace-pre-line text-muted">{n.text}</p></li>)}
+          </ul>
+        </section>
+      )}
+    </aside>
+  </div>
+</Admin>

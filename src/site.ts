@@ -35,6 +35,14 @@ export const site = {
   /** Business days from payment to first draft, for the due date on Nancy's dashboard. */
   draftDays: 7,
   revisionWindowDays: 30,
+  /**
+   * Nancy's dashboard automation. Each weekday morning she gets an email with
+   * what's overdue, due today and coming up. Anyone whose questionnaire has sat
+   * unpaid this many days gets one friendly payment reminder in her wording
+   * (only once; 0 turns it off).
+   */
+  morningEmail: true,
+  autoPaymentReminderDays: 3,
 
   // Hero banner from the old home page (job seeker celebrating at a desk).
   heroPhoto: wix("d45992_b10da7ac86e24885a753f59bc6e7b255~mv2.jpg", 2400, 1150),
