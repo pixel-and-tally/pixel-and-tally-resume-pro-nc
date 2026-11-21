@@ -19,7 +19,7 @@ Rule from the rebuild: no feature of the old site may be lost. Look: clean and p
 - Nancy's dashboard (`/admin/`, server-rendered): password login (env `ADMIN_PASSWORD`, signed cookie,
   `src/lib/auth.ts`). Every order, message, call request and free review is saved to Netlify Blobs
   (`src/lib/store.ts`; in-memory in local dev) as records in `src/lib/records.ts`. Order steps: waiting on
-  payment, queued (paid, draft due `draftDays` days later), writing, draft sent, delivered. Client emails
+  payment, queued (paid, draft due `draftDays` business days later), writing, draft sent, delivered. Client emails
   (`src/lib/client-mail.ts`) are Nancy's own wording from her real emails, keep it: questionnaire received + payment
   link (automatic), Resume Information (inquiry reply, editable), Received Payment, Resume Draft, final Word + PDF
   with her ATS advice and `reviewRequestUrl`. Sent as text + simple HTML with her signature. Saving never blocks a form: the email to Nancy still has everything.

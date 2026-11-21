@@ -47,9 +47,9 @@ describe("orders", () => {
 
   it("puts a paid order on the schedule with a due date", () => {
     expect(addDays("2026-11-20", 12)).toBe("2026-12-02");
-    const o = markPaid(order(), now, 12);
+    const o = markPaid(order(), now, 7);
     expect(o.status).toBe("queued");
-    expect(o.dueDate).toBe("2026-12-02");
+    expect(o.dueDate).toBe("2026-12-01");
     expect(o.log.at(-1)?.what).toContain("Payment received");
   });
 
@@ -58,7 +58,7 @@ describe("orders", () => {
     const b = { ...markPaid(order(), now, 7), id: "b", dueDate: "2026-11-25" };
     const c = setStatus(order(), "delivered", now);
     const queued = views.find((v) => v.id === "queued")!;
-    expect(inView([a, b, c], queued).map((o) => o.dueDate)).toEqual(["2026-11-25", "2026-11-27"]);
+    expect(inView([a, b, c], queued).map((o) => o.dueDate)).toEqual(["2026-11-25", "2026-12-01"]);
     expect(inView([a, b, c], views.find((v) => v.id === "past")!)).toHaveLength(1);
     expect(c.deliveredAt).toBeTruthy();
   });
@@ -96,7 +96,7 @@ describe("client emails (Nancy's wording)", () => {
     expect(all[1].text).toContain("Good morning Sam,");
     expect(all[1].text).toContain("resume draft in PDF format");
     expect(all[3].text).toContain("$495 for individuals with management experience and $395");
-    expect(all[3].text).toContain("approximately 10 to 12 days");
+    expect(all[3].text).toContain("approximately 5 to 7 business days");
   });
 
   it("explains Word versus PDF and asks for a review with the finals", () => {

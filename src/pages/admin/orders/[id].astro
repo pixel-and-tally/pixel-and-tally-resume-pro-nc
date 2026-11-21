@@ -146,7 +146,7 @@ const fieldError = (k: string) => (errors[k] ? { "aria-invalid": "true" as const
         <h2 id="next" class={h2}>Next step</h2>
         {o.status === "awaiting-payment" && (
           <div class="mt-4 flex flex-col gap-4">
-            <p class="text-sm text-muted">{site.paypalEmail ? "When they pay through PayPal, this happens on its own: the order moves to Queued and they get your \"Received Payment\" email. If they pay another way, mark it here." : "When the payment comes in, mark it paid."} They go on your writing schedule, and your dashboard sets the draft due {site.draftDays} days out (you can change it).</p>
+            <p class="text-sm text-muted">{site.paypalEmail ? "When they pay through PayPal, this happens on its own: the order moves to Queued and they get your \"Received Payment\" email. If they pay another way, mark it here." : "When the payment comes in, mark it paid."} They go on your writing schedule, and your dashboard sets the draft due {site.draftDays} business days out (you can change it).</p>
             <form method="post" class="flex flex-col gap-3">
               <input type="hidden" name="action" value="paid" />
               <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="notify" checked class="size-4 accent-[var(--color-accent)]" /> Send {first} your "Received Payment" email</label>

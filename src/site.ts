@@ -31,9 +31,9 @@ export const site = {
   /** Link clients use to leave Nancy a review (sent with the final files). Empty = the line is left out. */
   reviewRequestUrl: "https://www.google.com/maps/place//data=!4m3!3m2!1s0x8856bdc166854ff3:0xb222728c75ae2bd9!12e1?source=g.page.m.ia._&laa=nmx-review-solicitation-ia2",
 
-  turnaround: "10 to 12 days", // Nancy's current turnaround, from her client emails (2026-11-20). The old site said 5 to 7 business days.
-  /** Days from payment to first draft, for the due date on Nancy's dashboard. */
-  draftDays: 12,
+  turnaround: "5 to 7 business days", // Confirmed by Blake 2026-11-20 (her old emails said 10 to 12 days).
+  /** Business days from payment to first draft, for the due date on Nancy's dashboard. */
+  draftDays: 7,
   revisionWindowDays: 30,
 
   // Hero banner from the old home page (job seeker celebrating at a desk).

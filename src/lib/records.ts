@@ -178,7 +178,7 @@ const log = (o: OrderRecord, now: Date, what: string) => o.log.push({ at: now.to
 export function markPaid(o: OrderRecord, now: Date, draftDays: number): OrderRecord {
   o.paidAt = now.toISOString();
   o.status = "queued";
-  o.dueDate ??= addDays(localDateString(now, timeZone), draftDays);
+  o.dueDate ??= addBusinessDays(localDateString(now, timeZone), draftDays);
   log(o, now, "Payment received, added to the writing schedule");
   return o;
 }

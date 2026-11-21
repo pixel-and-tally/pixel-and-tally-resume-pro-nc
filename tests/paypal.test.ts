@@ -23,7 +23,7 @@ async function run(raw: string, verified = true) {
   const store = memoryStore();
   await store.setJSON(orderKey("2026-11-20-abc123"), order());
   const sendMail = vi.fn().mockResolvedValue(undefined);
-  const result = await handleIpn(raw, { store, verify: async () => verified, mail, sendMail, paypalEmail: "nancy@resumepronc.com", draftDays: 12, now });
+  const result = await handleIpn(raw, { store, verify: async () => verified, mail, sendMail, paypalEmail: "nancy@resumepronc.com", draftDays: 7, now });
   return { result, sendMail, o: (await store.getJSON<OrderRecord>(orderKey("2026-11-20-abc123")))!, store };
 }
 
@@ -42,11 +42,11 @@ describe("PayPal payment notice", () => {
     const { result, sendMail, o, store } = await run(ipn());
     expect(result).toBe("paid");
     expect(o.status).toBe("queued");
-    expect(o.dueDate).toBe("2026-12-02");
+    expect(o.dueDate).toBe("2026-12-01");
     expect(sendMail.mock.calls[0][0].subject).toBe("Received Payment");
     expect(sendMail.mock.calls[0][2]).toBe("sam@example.com");
     expect(sendMail.mock.calls[1][0].subject).toBe("Paid: Sam Lee, $395");
-    const again = await handleIpn(ipn(), { store, verify: async () => true, mail, sendMail, paypalEmail: "nancy@resumepronc.com", draftDays: 12, now });
+    const again = await handleIpn(ipn(), { store, verify: async () => true, mail, sendMail, paypalEmail: "nancy@resumepronc.com", draftDays: 7, now });
     expect(again).toBe("duplicate");
     expect(sendMail).toHaveBeenCalledTimes(2);
   });
