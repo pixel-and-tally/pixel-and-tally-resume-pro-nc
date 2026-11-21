@@ -54,6 +54,10 @@ export type OrderRecord = {
   dueDate?: string;
   draftCount: number;
   deliveredAt?: string;
+  /** When the automatic payment reminder went out (it only goes once). */
+  autoReminderAt?: string;
+  /** When Nancy checked in after delivery to see how the job search is going. */
+  followedUpAt?: string;
   log: LogEntry[];
 };
 

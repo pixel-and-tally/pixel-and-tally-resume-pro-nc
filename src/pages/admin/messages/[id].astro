@@ -5,6 +5,7 @@ import { sameOrigin } from "../../../lib/auth";
 import { inquiryEmail, inquiryText } from "../../../lib/client-mail";
 import { mailConfig, send } from "../../../lib/mail";
 import { site } from "../../../site";
+import { clientHref } from "../../../lib/desk";
 import { formatStamp, messageKey, messageKinds, type MessageRecord } from "../../../lib/records";
 import { store } from "../../../lib/store";
 
@@ -54,7 +55,7 @@ const box = "rounded-card border border-rule bg-sheet p-5 sm:p-6";
   <a href="/admin/?view=messages" class="text-sm font-semibold text-accent underline underline-offset-4">All messages</a>
   <p class="label mt-6">{messageKinds[m.kind]}</p>
   <h1 class="mt-2 text-3xl sm:text-4xl">{m.name}</h1>
-  <p class="mt-1 text-muted">Received {formatStamp(m.createdAt)}</p>
+  <p class="mt-1 text-muted">Received {formatStamp(m.createdAt)} · <a href={clientHref(m.email)} class="text-sm font-semibold text-accent underline underline-offset-4">Everything from {m.name.split(" ")[0]}</a></p>
   {saved && <p role="status" class="mt-6 rounded bg-accent-soft p-3 text-sm font-semibold text-accent">Saved.</p>}
   {sent && <p role="status" class="mt-6 rounded bg-accent-soft p-3 text-sm font-semibold text-accent">Email sent and marked handled.</p>}
   {replyError && <p role="alert" class="mt-6 rounded border border-danger p-3 text-sm font-semibold text-danger">{replyError}</p>}

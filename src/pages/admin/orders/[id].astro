@@ -6,7 +6,9 @@ import { draftEmail, finalEmail, paidEmail, paymentReminder } from "../../../lib
 import { questionnaire } from "../../../lib/forms";
 import { mailConfig, send, type Email } from "../../../lib/mail";
 import { money, paypalLink } from "../../../lib/order";
-import { formatDay, formatStamp, markPaid, orderKey, saveFile, setStatus, statuses, type OrderRecord } from "../../../lib/records";
+import { clientHref } from "../../../lib/desk";
+import { addBusinessDays, formatDay, formatStamp, markPaid, orderKey, saveFile, setStatus, statuses, type OrderRecord } from "../../../lib/records";
+import { localDateString } from "../../../lib/schedule";
 import { store } from "../../../lib/store";
 import { site } from "../../../site";
 
@@ -29,6 +31,8 @@ const done: Record<string, string> = {
   draft: "Draft emailed.",
   final: "Final files emailed. Order moved to Done.",
   cancel: "Order cancelled.",
+  revision: "Got it. Back in Writing with the new due date.",
+  followup: "Nice. Marked as checked in.",
   reopen: "Order reopened.",
 };
 
@@ -96,6 +100,17 @@ if (Astro.request.method === "POST" && sameOrigin(Astro.request)) {
         o.files.push(await saveFile(s, o.id, w.file, "Final (Word)", now), await saveFile(s, o.id, p.file, "Final (PDF)", now));
         setStatus(o, "delivered", now, "Emailed final Word and PDF");
       }
+    } else if (action === "revision") {
+      const due = String(form.get("revisionDue") ?? "");
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(due)) errors.revisionDue = "Pick when the revised draft is due.";
+      else {
+        o.dueDate = due;
+        const asked = note.trim();
+        setStatus(o, "writing", now, `Changes requested for draft ${o.draftCount}${asked ? `: ${asked}` : ""}`);
+      }
+    } else if (action === "followup") {
+      o.followedUpAt = now.toISOString();
+      o.log.push({ at: now.toISOString(), what: "Checked in on their job search" });
     } else if (action === "cancel") {
       setStatus(o, "cancelled", now, "Cancelled");
     } else if (action === "reopen") {
@@ -120,6 +135,12 @@ const active = !["delivered", "cancelled"].includes(o.status);
 const isUrl = (v: string) => v.startsWith("http://") || v.startsWith("https://");
 const box = "rounded-card border border-rule bg-sheet p-5 sm:p-6";
 const h2 = "font-display text-2xl";
+const today = localDateString(new Date(), "America/New_York");
+const texts = [
+  { label: "Draft is in your email", body: `Hi ${first}, it's Nancy with Resume Pro NC. I just emailed your resume draft. If you don't see it, please check your spam folder. Let me know what you think!` },
+  { label: "Quick question", body: `Hi ${first}, it's Nancy with Resume Pro NC. I'm working on your resume and have a quick question. Do you have a few minutes to talk today?` },
+  { label: "Final files sent", body: `Hi ${first}, it's Nancy with Resume Pro NC. Your final resume files are in your email. It was a pleasure working with you, best of luck!` },
+];
 const fieldError = (k: string) => (errors[k] ? { "aria-invalid": "true" as const, autofocus: Object.keys(errors)[0] === k } : {});
 ---
 
@@ -129,10 +150,11 @@ const fieldError = (k: string) => (errors[k] ? { "aria-invalid": "true" as const
     <div>
       <h1 class="text-3xl sm:text-4xl">{o.name}</h1>
       <p class="mt-1 text-muted">{o.lines.map((l) => l.name).join(", ")} · {money(o.total)}</p>
+      <a href={clientHref(o.email)} class="mt-1 inline-block text-sm font-semibold text-accent underline underline-offset-4">Everything from {first}</a>
     </div>
     <div class="text-right">
       <span class="rounded-full bg-ink px-3 py-1 text-sm font-semibold text-inverse">{statuses[o.status]}</span>
-      {o.dueDate && active && <p class="mt-2 text-sm text-muted">First draft due {formatDay(o.dueDate)}</p>}
+      {o.dueDate && active && <p class="mt-2 text-sm text-muted">{o.draftCount ? "Next draft due" : "First draft due"} {formatDay(o.dueDate)}</p>}
     </div>
   </div>
 
@@ -164,6 +186,24 @@ const fieldError = (k: string) => (errors[k] ? { "aria-invalid": "true" as const
             <input type="hidden" name="action" value="writing" />
             <p class="text-sm text-muted">Paid {o.paidAt && formatStamp(o.paidAt)}. Ready when you are.</p>
             <button class="btn btn-primary">Start writing</button>
+          </form>
+        )}
+        {o.status === "draft-sent" && (
+          <form method="post" class="mt-4 flex flex-col gap-4">
+            <input type="hidden" name="action" value="revision" />
+            <p class="text-sm text-muted">Draft {o.draftCount} is with {first}. When they reply with changes, log them here so the order goes back on your schedule with a due date. If they approved it, send the final files below.</p>
+            <div class="grid gap-4 sm:grid-cols-[1fr_12rem]">
+              <div class="flex flex-col gap-1.5">
+                <label for="revision-note" class="text-sm font-semibold">What they asked for <span class="font-normal text-muted">(optional, for your history)</span></label>
+                <textarea id="revision-note" name="note" rows="2" autocomplete="off" class="field" placeholder="Move education up, add the Lowe's promotion"></textarea>
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label for="revisionDue" class="text-sm font-semibold">Revision due</label>
+                <input id="revisionDue" name="revisionDue" type="date" required value={addBusinessDays(today, 2)} autocomplete="off" aria-describedby="revisionDue-error" {...fieldError("revisionDue")} class="field" />
+                <p id="revisionDue-error" class="text-sm font-semibold text-danger" hidden={!errors.revisionDue}>{errors.revisionDue}</p>
+              </div>
+            </div>
+            <button class="btn btn-quiet w-fit">They asked for changes</button>
           </form>
         )}
         {(o.status === "queued" || o.status === "writing" || o.status === "draft-sent") && (
@@ -206,6 +246,20 @@ const fieldError = (k: string) => (errors[k] ? { "aria-invalid": "true" as const
             <details class="text-sm text-muted"><summary class="cursor-pointer">What the email says</summary><div class="mt-2 whitespace-pre-line">{finalEmail(o, site.email, "", [], site.reviewRequestUrl).text}</div></details>
             <button class="btn btn-primary w-fit">Email the final files</button>
           </form>
+        )}
+        {o.status === "delivered" && (
+          <div class="mt-4 rounded bg-paper p-4 text-sm">
+            {o.followedUpAt ? (
+              <p class="text-muted">You checked in on {first}'s job search {formatStamp(o.followedUpAt)}.</p>
+            ) : (
+              <form method="post" class="flex flex-wrap items-center gap-3">
+                <input type="hidden" name="action" value="followup" />
+                <p class="text-muted">About a month after delivery, a quick "how's the search going?" goes a long way. It shows up on your Today list then.</p>
+                {o.phone && <a href={smsLink(o.phone, `Hi ${first}, it's Nancy with Resume Pro NC. I was thinking about you and wanted to see how the job search is going! Let me know if I can help with anything.`)} class="btn btn-quiet !px-3 !py-1.5">Text {first}</a>}
+                <button class="btn btn-quiet !px-3 !py-1.5">I checked in</button>
+              </form>
+            )}
+          </div>
         )}
         {!active && (
           <form method="post" class="mt-4 flex flex-wrap items-center gap-4">
@@ -259,6 +313,9 @@ const fieldError = (k: string) => (errors[k] ? { "aria-invalid": "true" as const
           {o.phone && (
             <div><dt class="font-semibold">Phone</dt><dd>{o.phone} · <a href={telLink(o.phone)} class="text-accent underline underline-offset-4">Call</a> · <a href={smsLink(o.phone)} class="text-accent underline underline-offset-4">Text</a></dd></div>
           )}
+          {o.phone && (
+            <div><dt class="font-semibold">Quick texts</dt><dd class="mt-1 flex flex-wrap gap-2">{texts.map((t) => <a href={smsLink(o.phone, t.body)} class="rounded-full border border-rule-strong px-2.5 py-1 text-xs hover:border-ink">{t.label}</a>)}</dd></div>
+          )}
           {address && <div><dt class="font-semibold">Address</dt><dd class="text-muted">{address}</dd></div>}
           {o.linkedin && <div><dt class="font-semibold">LinkedIn</dt><dd class="break-all"><a href={isUrl(o.linkedin) ? o.linkedin : `https://${o.linkedin}`} target="_blank" rel="noopener noreferrer" class="text-accent underline underline-offset-4">{o.linkedin}</a></dd></div>}
           <div><dt class="font-semibold">Ordered</dt><dd class="text-muted">{formatStamp(o.createdAt)}</dd></div>
@@ -285,7 +342,7 @@ const fieldError = (k: string) => (errors[k] ? { "aria-invalid": "true" as const
             <textarea id="notes-text" name="notes" rows="6" autocomplete="off" class="field">{o.notes}</textarea>
           </div>
           <div class="flex flex-col gap-1.5">
-            <label for="dueDate" class="text-sm font-semibold">First draft due</label>
+            <label for="dueDate" class="text-sm font-semibold">{o.draftCount ? "Next draft due" : "First draft due"}</label>
             <input id="dueDate" name="dueDate" type="date" value={o.dueDate ?? ""} autocomplete="off" aria-describedby="dueDate-error" {...fieldError("dueDate")} class="field" />
             <p id="dueDate-error" class="text-sm font-semibold text-danger" hidden={!errors.dueDate}>{errors.dueDate}</p>
           </div>

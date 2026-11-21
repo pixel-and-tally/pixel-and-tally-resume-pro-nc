@@ -23,6 +23,11 @@ Rule from the rebuild: no feature of the old site may be lost. Look: clean and p
   (`src/lib/client-mail.ts`) are Nancy's own wording from her real emails, keep it: questionnaire received + payment
   link (automatic), Resume Information (inquiry reply, editable), Received Payment, Resume Draft, final Word + PDF
   with her ATS advice and `reviewRequestUrl`. Sent as text + simple HTML with her signature. Saving never blocks a form: the email to Nancy still has everything.
+- Dashboard home is "Today" (`src/lib/desk.ts`): overdue and due drafts, unconfirmed calls, unanswered messages, unpaid orders,
+  quiet drafts and a 30-day "how's the search going?" check-in, each with Call / Text / Open, plus this month's numbers.
+  Clients tab and `/admin/clients/<email>/` join every order, message, file and note per email. Weekday 7 AM ET
+  `netlify/functions/morning.mts` (scheduled, free) emails Nancy the Today list and sends ONE automatic payment reminder
+  per order unpaid `autoPaymentReminderDays` (site.ts; 0 = off). Everything else to clients stays Nancy's click.
 - Payment: "Check out" on the order form saves the order, then sends the client to PayPal for the exact total
   (`paypalEmail` in `src/site.ts`, nancy@resumepronc.com), with the order id as `custom`. PayPal reports the payment to
   `/api/paypal-ipn` (`src/lib/paypal.ts`), which verifies it, marks the order paid and sends "Received Payment".
