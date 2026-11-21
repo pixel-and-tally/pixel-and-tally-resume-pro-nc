@@ -1,0 +1,51 @@
+---
+import Base from "../layouts/Base.astro";
+import Section from "../components/Section.astro";
+import Testimonials from "../components/Testimonials.astro";
+import { site } from "../site";
+---
+
+<Base title="About Nancy" description="Nancy Turner is the Resume Pro: an NC State communication graduate with a corporate background who writes every resume herself.">
+  <div class="border-b border-rule">
+    <div class="mx-auto grid max-w-6xl items-center gap-12 px-4 py-14 sm:px-6 md:grid-cols-[1fr_1.3fr] md:py-20">
+      {site.nancyPhoto && (
+        <img src={site.nancyPhoto} alt={`${site.owner}, owner of ${site.name}`} width="640" height="800"
+          class="aspect-[4/5] w-full max-w-sm rounded-card object-cover shadow-[var(--shadow-sheet)]" />
+      )}
+      <div>
+        <p class="label">About</p>
+        <h1 class="mt-4 text-4xl sm:text-5xl">Hi, I'm Nancy, the Resume Pro.</h1>
+        <div class="mt-6 space-y-4 text-lg leading-relaxed text-muted">
+          <p>I absolutely love writing resumes, and I'm passionate about helping my clients find their dream job. (I'm really good at it.)</p>
+          <p>Not your typical stuffy corporate writer, I'm known for creativity, originality, and a flair for turning the ordinary into extraordinary.</p>
+          <p>My top priority is getting your foot in the door for interviews and making sure you make a powerful, professional first impression.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <Section label="Background">
+    <dl class="grid gap-8 sm:grid-cols-2">
+      <div><dt class="font-display text-xl">Education</dt><dd class="mt-2 text-muted">North Carolina State University, degree in Communication.</dd></div>
+      <div><dt class="font-display text-xl">Experience</dt><dd class="mt-2 text-muted">Many years of writing experience and a successful background in Corporate America.</dd></div>
+      <div><dt class="font-display text-xl">What I write</dt><dd class="mt-2 text-muted">Job-winning resumes, cover letters and LinkedIn profiles for all industries, positions and skill levels.</dd></div>
+      <div><dt class="font-display text-xl">How I work</dt><dd class="mt-2 text-muted">Every document is personally written by me, never outsourced or automated.</dd></div>
+    </dl>
+  </Section>
+
+  <Section label="Coaching partner" tone="sunk">
+    <div class="flex flex-col gap-6 sm:flex-row sm:items-center">
+      {site.dougPhoto && <img src={site.dougPhoto} alt="Doug Burtch, interview coach" width="480" height="600" loading="lazy" class="aspect-[4/5] w-32 rounded-card object-cover" />}
+      <div>
+        <h2 class="text-3xl">Doug Burtch, interview coach</h2>
+        <p class="mt-3 max-w-2xl leading-relaxed text-muted">A retired Fortune 500 executive who helps clients prepare for common and complex interview questions, build confidence, and sell themselves.</p>
+        <a href="/interview-coaching/" class="mt-3 inline-block font-semibold text-accent underline underline-offset-4">About interview coaching</a>
+      </div>
+    </div>
+  </Section>
+
+  <Section label="Clients say">
+    <Testimonials limit={2} />
+    <a href="/order/" class="btn btn-primary mt-10">Start an order</a>
+  </Section>
+</Base>

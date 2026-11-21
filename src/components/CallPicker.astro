@@ -1,0 +1,83 @@
+---
+// Free phone consultation picker: open days as chips, then that day's open times
+// (Eastern). Optional on the contact form. Ported from the Pixel & Tally site.
+import { availability } from "../site";
+const chip =
+  "relative cursor-pointer rounded border border-rule-strong bg-sheet px-3.5 py-2 text-sm font-semibold whitespace-nowrap transition-colors hover:border-ink has-[:checked]:border-accent has-[:checked]:bg-accent has-[:checked]:text-inverse has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent";
+---
+
+<fieldset id="call" class="flex min-w-0 scroll-mt-28 flex-col gap-4" data-call-picker data-availability={JSON.stringify(availability)}>
+  <legend class="font-display text-2xl">Book a free {availability.callMinutes}-minute phone consultation</legend>
+  <p class="text-sm text-muted">Optional. Pick a day and time (Eastern) and I'll call you. Just want to send a message? Skip this part.</p>
+  <noscript><p class="text-sm">Turn on JavaScript to pick a time, or send a message and I'll suggest some.</p></noscript>
+  <div>
+    <p id="day-label" class="mb-2 text-sm font-semibold">Day</p>
+    <div role="radiogroup" aria-labelledby="day-label" class="-mx-1 flex gap-2.5 overflow-x-auto px-1 pt-1 pb-2" data-days></div>
+  </div>
+  <div data-times-wrap hidden>
+    <p id="time-label" class="mb-2 text-sm font-semibold">Time (Eastern)</p>
+    <div id="callTime" role="radiogroup" aria-labelledby="time-label" aria-describedby="callTime-error" tabindex="-1" class="flex flex-wrap gap-2.5 pt-1" data-times
+      data-error="Pick a time for that day, or clear it to just send a message."></div>
+    <p id="callTime-error" class="mt-2 text-sm font-semibold text-danger" hidden></p>
+  </div>
+  <button type="button" data-clear-call hidden class="w-fit text-sm text-muted underline underline-offset-4">Clear the time</button>
+</fieldset>
+
+<template id="chip-template"><label class={chip}><input type="radio" class="sr-only" /><span></span></label></template>
+
+<script>
+  import { availableTimes, bookableDates, formatTime, type Availability } from "../lib/schedule";
+
+  const picker = document.querySelector<HTMLElement>("[data-call-picker]");
+  if (picker) {
+    const cfg = JSON.parse(picker.dataset.availability!) as Availability;
+    const daysEl = picker.querySelector<HTMLElement>("[data-days]")!;
+    const timesWrap = picker.querySelector<HTMLElement>("[data-times-wrap]")!;
+    const timesEl = picker.querySelector<HTMLElement>("[data-times]")!;
+    const clear = picker.querySelector<HTMLButtonElement>("[data-clear-call]")!;
+    const template = document.querySelector<HTMLTemplateElement>("#chip-template")!;
+    const timeError = document.getElementById("callTime-error")!;
+
+    const makeChip = (name: string, value: string, label: string) => {
+      const node = template.content.firstElementChild!.cloneNode(true) as HTMLLabelElement;
+      const input = node.querySelector("input")!;
+      input.name = name;
+      input.value = value;
+      node.querySelector("span")!.textContent = label;
+      return { node, input };
+    };
+    const dayLabel = (date: string) =>
+      new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(`${date}T12:00:00Z`));
+
+    const showTimes = (date: string) => {
+      timesEl.replaceChildren();
+      for (const t of availableTimes(date, cfg, new Date())) {
+        const { node, input } = makeChip("callTime", t, formatTime(t));
+        input.addEventListener("change", () => (timeError.hidden = true));
+        timesEl.append(node);
+      }
+      timesWrap.hidden = false;
+      clear.hidden = false;
+      picker.dispatchEvent(new CustomEvent("call-change", { bubbles: true }));
+    };
+
+    const dates = bookableDates(cfg, new Date());
+    if (!dates.length) daysEl.textContent = "No open times in the next two weeks. Send a message and I'll find one.";
+    for (const d of dates) {
+      const { node, input } = makeChip("callDate", d, dayLabel(d));
+      input.addEventListener("change", () => showTimes(d));
+      daysEl.append(node);
+    }
+
+    clear.addEventListener("click", () => {
+      picker.querySelectorAll<HTMLInputElement>("input[type=radio]").forEach((r) => (r.checked = false));
+      timesEl.replaceChildren();
+      timesWrap.hidden = true;
+      clear.hidden = true;
+      timeError.hidden = true;
+      picker.dispatchEvent(new CustomEvent("call-change", { bubbles: true }));
+    });
+
+    if (location.hash === "#call") picker.scrollIntoView({ block: "start" });
+  }
+</script>

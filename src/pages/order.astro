@@ -1,0 +1,255 @@
+---
+import Base from "../layouts/Base.astro";
+import PageHead from "../components/PageHead.astro";
+import Field from "../components/Field.astro";
+import { services, site } from "../site";
+import { honeypotField, maxJobs, maxUploadBytes, questionnaire, uploadTypes } from "../lib/forms";
+import { money } from "../lib/order";
+
+const resumes = services.filter((s) => s.kind === "resume");
+const extras = services.filter((s) => s.kind !== "resume");
+const legend = "font-display text-2xl sm:text-3xl";
+const part = "flex min-w-0 flex-col gap-6 border-t border-rule pt-10";
+const choice =
+  "flex cursor-pointer items-start gap-3 rounded-card border border-rule bg-sheet p-4 transition-colors hover:border-rule-strong has-[:checked]:border-accent has-[:checked]:bg-accent-soft has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent";
+---
+
+<Base title="Start an order" description="Order your resume, LinkedIn profile, cover letter or interview coaching in one step, with the questionnaire built in.">
+  <PageHead
+    label="Start an order"
+    title="Your order, in one place."
+    lead={`Choose your services, tell me about your experience, and attach your current resume. You see the total as you go, ${site.paypalEmail ? "and pay securely through PayPal once your order is in." : "and I email an invoice once it's in."}`}
+  />
+
+  <div class="mx-auto grid max-w-6xl gap-12 px-4 py-14 sm:px-6 lg:grid-cols-[1fr_20rem]">
+    <form id="order" method="POST" action="/api/order" enctype="multipart/form-data" novalidate class="flex min-w-0 flex-col gap-12" data-order-form>
+      <p class="hidden" aria-hidden="true"><label>Leave this empty: <input name={honeypotField} tabindex="-1" autocomplete="off" /></label></p>
+      <div data-form-error role="alert" tabindex="-1" hidden class="rounded-card border border-danger bg-sheet px-4 py-3 font-semibold text-danger"></div>
+
+      <!-- 1. Services -->
+      <fieldset id="services" class="flex min-w-0 flex-col gap-6" tabindex="-1" aria-describedby="services-error"
+        data-error="Pick at least one service. A cover letter needs a resume in the same order.">
+        <legend class={legend}><span class="text-accent">1.</span> Choose your services</legend>
+        <p id="services-error" class="-mt-2 text-sm font-semibold text-danger" hidden></p>
+
+        <div>
+          <p class="text-sm font-semibold">Resume level</p>
+          <div class="mt-3 grid gap-3">
+            {
+              resumes.map((s) => (
+                <label class={choice}>
+                  <input type="radio" name="resumeLevel" value={s.id} data-price={s.price} data-name={s.name} class="mt-1 accent-[var(--color-accent)]" />
+                  <span class="flex-1">
+                    <span class="flex items-baseline justify-between gap-4">
+                      <span class="font-semibold">{s.name}</span>
+                      <span class="font-display text-lg tabular-nums">{money(s.price)}</span>
+                    </span>
+                    <span class="mt-0.5 block text-sm text-muted">{s.fit}</span>
+                  </span>
+                </label>
+              ))
+            }
+            <label class={choice}>
+              <input type="radio" name="resumeLevel" value="" data-price="0" class="mt-1 accent-[var(--color-accent)]" checked />
+              <span class="flex-1">
+                <span class="font-semibold">No resume this time</span>
+                <span class="mt-0.5 block text-sm text-muted">Just a LinkedIn profile or interview coaching.</span>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <p class="text-sm font-semibold">Add-ons and coaching</p>
+          <div class="mt-3 grid gap-3">
+            {
+              extras.map((s) => (
+                <label class={choice}>
+                  <input type="checkbox" name="addons" value={s.id} data-price={s.price} data-name={s.name} class="mt-1 accent-[var(--color-accent)]" />
+                  <span class="flex-1">
+                    <span class="flex items-baseline justify-between gap-4">
+                      <span class="font-semibold">{s.name}</span>
+                      <span class="font-display text-lg tabular-nums">{money(s.price)}</span>
+                    </span>
+                    <span class="mt-0.5 block text-sm text-muted">{s.note ?? s.fit}</span>
+                  </span>
+                </label>
+              ))
+            }
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- 2. About you -->
+      <fieldset class={part}>
+        <legend class={`${legend} float-left w-full`}><span class="text-accent">2.</span> About you</legend>
+        <div class="grid gap-5 sm:grid-cols-2">
+          <Field id="name" label="Full name" autocomplete="name" required error="Tell me your name." />
+          <Field id="email" label="Email" type="email" autocomplete="email" required error="Enter an email I can reply to, like you@example.com." />
+          <Field id="phone" label="Phone" type="tel" inputmode="tel" autocomplete="tel" error="Enter a phone number with area code, like 704-555-0123." />
+          <Field id="linkedin" label="LinkedIn profile link" type="url" autocomplete="url" placeholder="linkedin.com/in/your-name" />
+          <Field id="street" label="Street address" autocomplete="street-address" class="sm:col-span-2" required error="Enter your street address." />
+          <Field id="city" label="City" autocomplete="address-level2" required error="Enter your city." />
+          <div class="grid grid-cols-[1fr_1.2fr] gap-4">
+            <Field id="state" label="State" autocomplete="address-level1" required error="Enter your state." maxlength={20} />
+            <Field id="zip" label="ZIP" autocomplete="postal-code" inputmode="numeric" maxlength={10} required error="Enter your ZIP code." />
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- 3. Questionnaire -->
+      <fieldset class={part}>
+        <legend class={`${legend} float-left w-full`}><span class="text-accent">3.</span> Your experience</legend>
+        <p class="text-muted">
+          Use these as prompts. Answer what applies and skip the rest. Don't worry about formatting, grammar or punctuation.
+          Just give me your facts, information and dates, and I'll take care of the rest.
+        </p>
+
+        <fieldset class="flex flex-col gap-2">
+          <legend class="text-sm font-semibold">Is this a career change for you? <span class="font-normal text-muted">(optional)</span></legend>
+          <div class="mt-2 flex gap-3">
+            {["Yes", "No"].map((v) => (
+              <label class={`${choice} !p-3 !px-4`}><input type="radio" name="careerChange" value={v} class="accent-[var(--color-accent)]" /> {v}</label>
+            ))}
+          </div>
+        </fieldset>
+
+        {
+          questionnaire.map((q) => (
+            <Field
+              id={q.id}
+              label={q.label}
+              rows={q.id === "achievements" ? 6 : 3}
+              required={"required" in q && q.required}
+              hint={"hint" in q ? q.hint : undefined}
+              error={"required" in q && q.required ? "Tell me the kind of job you're going for." : undefined}
+            />
+          ))
+        }
+
+        <div class="flex flex-col gap-4" data-jobs data-max={maxJobs}>
+          <div>
+            <p class="text-sm font-semibold">Employment history <span class="font-normal text-muted">(optional)</span></p>
+            <p class="mt-1 text-xs text-muted">One box per job, most recent first: title, company, city, dates, and what you did. Skip this if your current resume has it.</p>
+          </div>
+          {
+            Array.from({ length: maxJobs }, (_, i) => (
+              <div class="flex flex-col gap-1.5" data-job hidden={i > 3}>
+                <label for={`job${i + 1}`} class="text-sm font-semibold">Job {i + 1}{i === 0 ? " (most recent)" : ""}</label>
+                <textarea id={`job${i + 1}`} name={`job${i + 1}`} rows="4" class="field"></textarea>
+              </div>
+            ))
+          }
+          <button type="button" class="btn btn-quiet w-fit !py-2 text-sm" data-add-job>Add another job</button>
+        </div>
+      </fieldset>
+
+      <!-- 4. Resume + timing -->
+      <fieldset class={part}>
+        <legend class={`${legend} float-left w-full`}><span class="text-accent">4.</span> Your current resume and target jobs</legend>
+        <div class="flex flex-col gap-1.5">
+          <label for="resume" class="text-sm font-semibold">Attach your current resume <span class="font-normal text-muted">(optional)</span></label>
+          <p id="resume-hint" class="text-xs text-muted">PDF or Word, up to {Math.round(maxUploadBytes / 1024 / 1024)} MB.</p>
+          <input id="resume" name="resume" type="file" accept={uploadTypes.join(",")} data-max-bytes={maxUploadBytes}
+            data-error={`Attach a PDF or Word file under ${Math.round(maxUploadBytes / 1024 / 1024)} MB.`}
+            aria-describedby="resume-hint resume-error"
+            class="field file:mr-4 file:rounded file:border-0 file:bg-accent-soft file:px-3 file:py-1.5 file:font-semibold file:text-accent" />
+          <p id="resume-error" class="text-sm font-semibold text-danger" hidden></p>
+        </div>
+        <Field id="postings" label="Job postings you're applying for" rows={4} placeholder="https://..."
+          hint="Paste a link to each posting, one per line. I'll match your resume to what they're asking for." />
+        <Field id="rush" label="Deadline or rush request" hint={`Typical turnaround is ${site.turnaround}. Need it sooner? Tell me when.`} />
+      </fieldset>
+
+      <div class="flex flex-col gap-3 border-t border-rule pt-10">
+        <button type="submit" class="btn btn-primary w-full text-lg sm:w-fit">{site.paypalEmail ? "Check out" : "Place my order"}</button>
+        <p class="text-xs text-muted">{site.paypalEmail ? "Next you'll go to PayPal to pay by card or PayPal account (no PayPal account needed). Once payment is received, you're on my writing schedule." : "Nothing is charged now. I'll email an invoice, and writing starts once it's paid."} Your details are only used for your order.</p>
+      </div>
+    </form>
+
+    <aside class="lg:sticky lg:top-24 lg:self-start" aria-labelledby="summary-title">
+      <div class="rounded-card bg-sheet p-6 shadow-[var(--shadow-sheet)]">
+        <p id="summary-title" class="label">Your order</p>
+        <ul class="mt-4 divide-y divide-rule text-sm" data-summary-lines aria-live="polite">
+          <li class="py-2 text-muted">Nothing picked yet.</li>
+        </ul>
+        <div class="mt-3 flex items-baseline justify-between border-t-2 border-ink pt-3">
+          <span class="font-semibold">Total</span>
+          <span class="font-display text-3xl tabular-nums" data-summary-total>$0</span>
+        </div>
+        <p class="mt-4 text-xs leading-relaxed text-muted">Includes revisions until you're 100% satisfied, plus {site.revisionWindowDays} days of free changes after you approve.</p>
+      </div>
+      <p class="mt-5 text-sm text-muted">Questions first? <a class="text-accent underline underline-offset-4" href="/contact/#call">Book a free phone consultation.</a></p>
+    </aside>
+  </div>
+</Base>
+
+<script>
+  import { wireForm } from "../scripts/form";
+  import { money } from "../lib/order";
+
+  const form = document.querySelector<HTMLFormElement>("[data-order-form]");
+  if (form) {
+    const lines = document.querySelector<HTMLElement>("[data-summary-lines]")!;
+    const totalEl = document.querySelector<HTMLElement>("[data-summary-total]")!;
+    const pickers = Array.from(form.querySelectorAll<HTMLInputElement>("input[name=resumeLevel], input[name=addons]"));
+
+    const picked = () => pickers.filter((p) => p.checked && p.value);
+    const render = () => {
+      const items = picked();
+      lines.replaceChildren(
+        ...(items.length
+          ? items.map((p) => {
+              const li = document.createElement("li");
+              li.className = "flex justify-between gap-4 py-2";
+              li.innerHTML = `<span></span><span class="tabular-nums"></span>`;
+              li.children[0].textContent = p.dataset.name!;
+              li.children[1].textContent = money(Number(p.dataset.price));
+              return li;
+            })
+          : [Object.assign(document.createElement("li"), { className: "py-2 text-muted", textContent: "Nothing picked yet." })]),
+      );
+      totalEl.textContent = money(items.reduce((s, p) => s + Number(p.dataset.price), 0));
+    };
+
+    // Preselect from /order/?resume=professional&add=linkedin
+    const params = new URLSearchParams(location.search);
+    const resume = params.get("resume");
+    if (resume) pickers.find((p) => p.name === "resumeLevel" && p.value === resume)?.click();
+    for (const a of params.getAll("add")) {
+      const box = pickers.find((p) => p.name === "addons" && p.value === a);
+      if (box) box.checked = true;
+    }
+    pickers.forEach((p) => p.addEventListener("change", render));
+    render();
+
+    // Repeatable jobs: show the next hidden box.
+    const add = form.querySelector<HTMLButtonElement>("[data-add-job]")!;
+    add.addEventListener("click", () => {
+      const next = form.querySelector<HTMLElement>("[data-job][hidden]");
+      if (next) {
+        next.hidden = false;
+        next.querySelector("textarea")?.focus();
+      }
+      if (!form.querySelector("[data-job][hidden]")) add.hidden = true;
+    });
+
+    const { setError } = wireForm(form, {
+      failMessage: "That didn't send. Please try again in a minute, or email Nancy@ResumeProNC.com.",
+      extraChecks: () => {
+        const items = picked();
+        const hasResume = items.some((p) => p.name === "resumeLevel");
+        const bad = items.length === 0 || (items.some((p) => p.value === "cover-letter") && !hasResume);
+        setError("services", bad ? (document.getElementById("services")!.dataset.error ?? "") : "");
+        return bad ? ["services"] : [];
+      },
+      successUrl: () => {
+        const items = picked();
+        const q = new URLSearchParams({ form: "order", total: String(items.reduce((s, p) => s + Number(p.dataset.price), 0)) });
+        items.forEach((p) => q.append("item", p.dataset.name!));
+        return `/thanks/?${q}`;
+      },
+    });
+    pickers.forEach((p) => p.addEventListener("change", () => setError("services", "")));
+  }
+</script>

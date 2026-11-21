@@ -1,0 +1,120 @@
+---
+import Admin from "../../layouts/Admin.astro";
+import { isAdmin } from "../../lib/admin";
+import { money } from "../../lib/order";
+import { formatDay, formatStamp, inView, listMessages, listOrders, messageKinds, statuses, views, type ViewId } from "../../lib/records";
+import { localDateString } from "../../lib/schedule";
+import { store } from "../../lib/store";
+
+export const prerender = false;
+
+if (!isAdmin(Astro.cookies)) return Astro.redirect("/admin/login/");
+
+const s = store();
+const [orders, messages] = await Promise.all([listOrders(s), listMessages(s)]);
+const today = localDateString(new Date(), "America/New_York");
+
+const tabs = [
+  ...views.map((v) => ({ id: v.id as ViewId, label: v.label, count: inView(orders, v).length })),
+  { id: "messages" as ViewId, label: "Messages", count: messages.filter((m) => !m.handled).length },
+];
+const asked = Astro.url.searchParams.get("view") as ViewId | null;
+const view: ViewId = tabs.some((t) => t.id === asked) ? asked! : "queued";
+const current = views.find((v) => v.id === view);
+const rows = current ? inView(orders, current) : [];
+
+const intro: Record<ViewId, string> = {
+  payment: "Questionnaire is in. They go on the schedule once you mark them paid.",
+  queued: "Paid and waiting to be written, soonest due first.",
+  present: "You're writing, or the draft is with the client.",
+  past: "Final files sent, or cancelled.",
+  messages: "Contact messages, phone consultation requests and free resume reviews.",
+};
+const badge = (st: string) =>
+  st === "delivered" ? "bg-accent-soft text-accent" : st === "awaiting-payment" ? "bg-mark text-ink" : st === "cancelled" ? "bg-sunk text-muted" : "bg-ink text-inverse";
+---
+
+<Admin title="Dashboard">
+  <div class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <p class="label">Dashboard</p>
+      <h1 class="mt-2 text-3xl sm:text-4xl">Your orders</h1>
+    </div>
+    <div class="flex flex-col items-end gap-2">
+      <a href="/admin/send-link/" class="btn btn-primary">Send an order link</a>
+      <p class="text-sm text-muted">{orders.length} orders, {messages.length} messages in total</p>
+    </div>
+  </div>
+
+  <nav aria-label="Order lists" class="mt-8 flex gap-1 overflow-x-auto border-b border-rule">
+    {
+      tabs.map((t) => (
+        <a href={`/admin/?view=${t.id}`} aria-current={t.id === view ? "page" : undefined}
+          class:list={["-mb-px flex shrink-0 items-center gap-2 border-b-2 px-3 py-2.5 text-sm font-semibold", t.id === view ? "border-accent text-ink" : "border-transparent text-muted hover:text-ink"]}>
+          {t.label}
+          <span class:list={["rounded-full px-2 py-0.5 text-xs tabular-nums", t.id === view ? "bg-accent text-inverse" : "bg-sunk text-muted"]}>{t.count}</span>
+        </a>
+      ))
+    }
+  </nav>
+  <p class="mt-4 text-sm text-muted">{intro[view]}</p>
+
+  {
+    current && (rows.length ? (
+      <ul class="mt-6 divide-y divide-rule rounded-card border border-rule bg-sheet">
+        {rows.map((o) => {
+          const late = o.dueDate && o.dueDate < today && (o.status === "queued" || o.status === "writing");
+          return (
+            <li>
+              <a href={`/admin/orders/${o.id}/`} class="grid gap-2 p-4 hover:bg-paper sm:grid-cols-[1.4fr_1.6fr_auto] sm:items-center sm:gap-6 sm:px-5">
+                <div>
+                  <p class="font-display text-xl">{o.name}</p>
+                  <p class="text-sm text-muted">{o.email}{o.phone && ` · ${o.phone}`}</p>
+                </div>
+                <div class="text-sm">
+                  <p>{o.lines.map((l) => l.name).join(", ")}</p>
+                  <p class="text-muted">
+                    {money(o.total)} · ordered {formatStamp(o.createdAt)}
+                    {o.rush && <span class="font-semibold text-danger"> · Rush: {o.rush}</span>}
+                  </p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2 sm:flex-col sm:items-end">
+                  <span class:list={["rounded-full px-2.5 py-1 text-xs font-semibold", badge(o.status)]}>{statuses[o.status]}</span>
+                  {o.dueDate && o.status !== "delivered" && o.status !== "cancelled" && (
+                    <span class:list={["text-xs", late ? "font-semibold text-danger" : "text-muted"]}>{late ? "Overdue: " : "Draft due "}{formatDay(o.dueDate)}</span>
+                  )}
+                </div>
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    ) : (
+      <p class="mt-6 rounded-card border border-dashed border-rule-strong p-8 text-center text-muted">Nothing here right now.</p>
+    ))
+  }
+
+  {
+    view === "messages" && (messages.length ? (
+      <ul class="mt-6 divide-y divide-rule rounded-card border border-rule bg-sheet">
+        {messages.map((m) => (
+          <li>
+            <a href={`/admin/messages/${m.id}/`} class="grid gap-2 p-4 hover:bg-paper sm:grid-cols-[1.4fr_1.6fr_auto] sm:items-center sm:gap-6 sm:px-5">
+              <div>
+                <p class:list={["font-display text-xl", m.handled && "text-muted"]}>{m.name}</p>
+                <p class="text-sm text-muted">{m.email}{m.phone && ` · ${m.phone}`}</p>
+              </div>
+              <p class="line-clamp-2 text-sm text-muted">{m.callAt ? `Call: ${m.callAt}` : m.subject || m.body || m.target}</p>
+              <div class="flex flex-wrap items-center gap-2 sm:flex-col sm:items-end">
+                <span class="rounded-full bg-sunk px-2.5 py-1 text-xs font-semibold">{messageKinds[m.kind]}</span>
+                <span class="text-xs text-muted">{m.handled ? "Handled" : formatStamp(m.createdAt)}</span>
+              </div>
+            </a>
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <p class="mt-6 rounded-card border border-dashed border-rule-strong p-8 text-center text-muted">No messages yet.</p>
+    ))
+  }
+</Admin>

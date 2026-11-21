@@ -1,0 +1,35 @@
+---
+// One labeled form field with its hint and inline error.
+interface Props {
+  id: string;
+  label: string;
+  type?: "text" | "email" | "tel" | "url";
+  autocomplete?: string;
+  required?: boolean;
+  error?: string;
+  hint?: string;
+  rows?: number;
+  placeholder?: string;
+  class?: string;
+  inputmode?: "text" | "tel" | "email" | "numeric" | "url";
+  maxlength?: number;
+}
+const { id, label, type = "text", autocomplete = "off", required = false, error, hint, rows, placeholder, class: cls = "", inputmode, maxlength } = Astro.props;
+const described = [hint && `${id}-hint`, `${id}-error`].filter(Boolean).join(" ");
+---
+
+<div class:list={["flex flex-col gap-1.5", cls]}>
+  <label for={id} class="text-sm font-semibold">
+    {label}
+    {required ? <span class="text-accent" aria-hidden="true"> *</span> : <span class="font-normal text-muted"> (optional)</span>}
+  </label>
+  {hint && <p id={`${id}-hint`} class="-mt-0.5 text-xs text-muted">{hint}</p>}
+  {
+    rows ? (
+      <textarea {id} name={id} {rows} {required} {placeholder} {autocomplete} data-error={error} aria-describedby={described} class="field" />
+    ) : (
+      <input {id} name={id} {type} {autocomplete} {required} {placeholder} {inputmode} {maxlength} data-error={error} aria-describedby={described} class="field" />
+    )
+  }
+  <p id={`${id}-error`} class="text-sm font-semibold text-danger" hidden></p>
+</div>

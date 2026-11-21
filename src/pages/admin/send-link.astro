@@ -1,0 +1,124 @@
+---
+// After the phone call: send the client the link to pick services, fill out the
+// questionnaire and check out. Email it from here, or text it from her phone.
+import Admin from "../../layouts/Admin.astro";
+import { isAdmin, smsLink } from "../../lib/admin";
+import { sameOrigin } from "../../lib/auth";
+import { orderLink, orderLinkEmail, orderLinkText } from "../../lib/client-mail";
+import { mailConfig, send } from "../../lib/mail";
+import { messageKey, type MessageRecord } from "../../lib/records";
+import { store } from "../../lib/store";
+import { services, site } from "../../site";
+
+export const prerender = false;
+
+if (!isAdmin(Astro.cookies)) return Astro.redirect("/admin/login/");
+
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const s = store();
+const fromId = Astro.url.searchParams.get("from") ?? "";
+const from = fromId ? await s.getJSON<MessageRecord>(messageKey(fromId)) : null;
+const resumes = services.filter((x) => x.kind === "resume");
+
+let v = { name: from?.name ?? "", email: from?.email ?? "", phone: from?.phone ?? "", level: "", body: orderLinkText("{name}") };
+const errors: Record<string, string> = {};
+let formError = "";
+let sentTo = "";
+
+if (Astro.request.method === "POST" && sameOrigin(Astro.request)) {
+  const f = await Astro.request.formData();
+  const t = (k: string, max = 300) => String(f.get(k) ?? "").trim().slice(0, max);
+  v = { name: t("name"), email: t("email"), phone: t("phone", 40), level: t("level", 40), body: t("body", 10000) };
+  if (!v.name) errors.name = "Enter their name.";
+  if (!EMAIL.test(v.email)) errors.email = "Enter their email, like name@example.com.";
+  if (v.body.length < 10) errors.body = "Write the email before sending.";
+  const cfg = mailConfig();
+  const preview = f.get("action") === "preview";
+  if (preview) {
+    delete errors.email;
+    delete errors.body;
+  }
+  if (preview && !Object.keys(errors).length) {
+    // Just refresh the link and the text button.
+  } else if (!Object.keys(errors).length) {
+    if (!cfg.apiKey) formError = "Email isn't set up yet (RESEND_API_KEY in Netlify), so nothing was sent. You can still text the link below.";
+    else {
+      try {
+        const first = v.name.split(/\s+/)[0];
+        await send(orderLinkEmail(v.body.replaceAll("{name}", first), orderLink(v.level), cfg.to || site.email), cfg, v.email);
+        sentTo = v.email;
+        if (from) {
+          (from.sent ??= []).push({ at: new Date().toISOString(), what: "Sent the order link" });
+          from.handled = true;
+          await s.setJSON(messageKey(from.id), from);
+        }
+      } catch (err) {
+        console.error(err);
+        formError = "The email didn't send. Try again in a minute, or text the link below.";
+      }
+    }
+  } else formError = "Fix the highlighted fields below.";
+}
+
+const link = orderLink(v.level);
+const firstBad = Object.keys(errors)[0];
+const bad = (k: string) => (errors[k] ? { "aria-invalid": "true" as const, autofocus: firstBad === k } : {});
+const textBody = `Hi ${v.name.split(/\s+/)[0] || ""}, it's Nancy with ${site.name}. Thanks for talking with me! Here's the link to choose your services, fill out the questionnaire and check out: ${link}`;
+---
+
+<Admin title="Send the order link">
+  <a href={from ? `/admin/messages/${from.id}/` : "/admin/"} class="text-sm font-semibold text-accent underline underline-offset-4">Back</a>
+  <h1 class="mt-4 text-3xl sm:text-4xl">Send the order link</h1>
+  <p class="mt-2 max-w-2xl text-muted">After your call, send them the link to pick their services, fill out the questionnaire and check out. When they pay through PayPal, they land in your Queued tab and get your "Received Payment" email on their own.</p>
+
+  {sentTo && <p role="status" class="mt-6 rounded bg-accent-soft p-3 text-sm font-semibold text-accent">Sent to {sentTo}.</p>}
+  {formError && <p role="alert" class="mt-6 rounded border border-danger p-3 text-sm font-semibold text-danger">{formError}</p>}
+
+  <div class="mt-8 grid gap-6 lg:grid-cols-[1fr_22rem]">
+    <form method="post" class="flex flex-col gap-5 rounded-card border border-rule bg-sheet p-5 sm:p-6" novalidate>
+      <div class="grid gap-5 sm:grid-cols-2">
+        <div class="flex flex-col gap-1.5">
+          <label for="name" class="text-sm font-semibold">Their name</label>
+          <input id="name" name="name" value={v.name} required autocomplete="off" aria-describedby="name-error" {...bad("name")} class="field" />
+          <p id="name-error" class="text-sm font-semibold text-danger" hidden={!errors.name}>{errors.name}</p>
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label for="email" class="text-sm font-semibold">Their email</label>
+          <input id="email" name="email" type="email" value={v.email} required autocomplete="off" aria-describedby="email-error" {...bad("email")} class="field" />
+          <p id="email-error" class="text-sm font-semibold text-danger" hidden={!errors.email}>{errors.email}</p>
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label for="phone" class="text-sm font-semibold">Their cell <span class="font-normal text-muted">(optional, to text the link)</span></label>
+          <input id="phone" name="phone" type="tel" value={v.phone} autocomplete="off" class="field" />
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label for="level" class="text-sm font-semibold">Resume level to pick for them <span class="font-normal text-muted">(optional)</span></label>
+          <select id="level" name="level" autocomplete="off" class="field">
+            <option value="">Let them choose</option>
+            {resumes.map((r) => <option value={r.id} selected={v.level === r.id}>{r.name}</option>)}
+          </select>
+        </div>
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <label for="body" class="text-sm font-semibold">Email <span class="font-normal text-muted">({"{name}"} becomes their first name; the link and your signature are added)</span></label>
+        <textarea id="body" name="body" rows="12" autocomplete="off" aria-describedby="body-error" {...bad("body")} class="field">{v.body}</textarea>
+        <p id="body-error" class="text-sm font-semibold text-danger" hidden={!errors.body}>{errors.body}</p>
+      </div>
+      <div class="flex flex-wrap gap-3">
+        <button class="btn btn-primary" name="action" value="send">Email the link</button>
+        <button class="btn btn-quiet" name="action" value="preview">Just get the link to text</button>
+      </div>
+    </form>
+
+    <aside class="flex flex-col gap-3 self-start rounded-card border border-rule bg-sheet p-5 text-sm sm:p-6">
+      <h2 class="font-display text-2xl">Or text it</h2>
+      <p class="text-muted">The link{v.level && " (with their resume level picked)"}:</p>
+      <p class="break-all rounded bg-paper p-3 font-mono text-xs">{link}</p>
+      {v.phone ? (
+        <a href={smsLink(v.phone, textBody)} class="btn btn-quiet w-fit">Text it to {v.phone}</a>
+      ) : (
+        <p class="text-muted">Add their name and cell, then press "Just get the link to text" for a one-tap text button. Or copy the link above into your messages.</p>
+      )}
+    </aside>
+  </div>
+</Admin>

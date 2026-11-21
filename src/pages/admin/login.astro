@@ -1,0 +1,46 @@
+---
+import Admin from "../../layouts/Admin.astro";
+import { authConfig, createSession, passwordMatches, sameOrigin, sessionCookie, sessionDays } from "../../lib/auth";
+import { isAdmin } from "../../lib/admin";
+
+export const prerender = false;
+
+if (isAdmin(Astro.cookies)) return Astro.redirect("/admin/");
+
+const cfg = authConfig();
+let error = "";
+if (Astro.request.method === "POST" && sameOrigin(Astro.request)) {
+  const form = await Astro.request.formData();
+  if (passwordMatches(String(form.get("password") ?? ""), cfg.password)) {
+    Astro.cookies.set(sessionCookie, createSession(cfg.secret), {
+      path: "/",
+      httpOnly: true,
+      secure: Astro.url.protocol === "https:",
+      sameSite: "strict",
+      maxAge: sessionDays * 86_400,
+    });
+    return Astro.redirect("/admin/", 303);
+  }
+  await new Promise((r) => setTimeout(r, 800)); // slows down guessing
+  error = "That password didn't work. Try again.";
+}
+---
+
+<Admin title="Log in" signedIn={false}>
+  <div class="mx-auto max-w-sm rounded-card border border-rule bg-sheet p-6 shadow-[var(--shadow-sheet)] sm:p-8">
+    <h1 class="text-3xl">Log in</h1>
+    <p class="mt-2 text-sm text-muted">Your orders, messages and files, all in one place.</p>
+    {!cfg.password && <p class="mt-4 rounded bg-mark p-3 text-sm">The dashboard password isn't set yet. Add ADMIN_PASSWORD in Netlify's environment variables.</p>}
+    {error && <p role="alert" class="mt-4 text-sm font-semibold text-danger">{error}</p>}
+    <form method="post" class="mt-6 flex flex-col gap-4">
+      <input type="text" name="username" value="nancy" autocomplete="username" hidden />
+      <div class="flex flex-col gap-1.5">
+        <label for="password" class="text-sm font-semibold">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required autofocus
+          aria-invalid={error ? "true" : undefined} aria-describedby="password-error" class="field" />
+        <p id="password-error" class="text-sm font-semibold text-danger" hidden={!error}>{error && "Check the password and try again."}</p>
+      </div>
+      <button class="btn btn-primary">Log in</button>
+    </form>
+  </div>
+</Admin>

@@ -1,0 +1,12 @@
+---
+import Base from "../../layouts/Base.astro";
+import PageHead from "../../components/PageHead.astro";
+import PostList from "../../components/PostList.astro";
+import { sortedPosts } from "../../lib/blog";
+const posts = await sortedPosts();
+---
+
+<Base title="Career Tips" description="Free advice on resumes, interviews, LinkedIn, salary and the job search from Resume Pro NC.">
+  <PageHead label="Career Tips" title="Advice for every step of your search." lead={`${posts.length} articles on resumes, interviews, LinkedIn, salary and the job search.`} />
+  <div class="mx-auto max-w-6xl px-4 py-12 sm:px-6"><PostList posts={posts} /></div>
+</Base>

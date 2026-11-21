@@ -1,0 +1,48 @@
+---
+import Logo from "./Logo.astro";
+import { nav, site } from "../site";
+const year = new Date().getFullYear();
+---
+
+<footer class="mt-24 border-t border-rule bg-sunk">
+  <div class="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-[1.4fr_1fr_1fr]">
+    <div class="flex flex-col gap-4">
+      <Logo />
+      <p class="max-w-sm text-sm leading-relaxed text-muted">
+        Resumes, LinkedIn profiles and cover letters for every career level, personally written by {site.owner}.
+      </p>
+    </div>
+
+    <div>
+      <p class="label">Pages</p>
+      <ul class="mt-4 grid gap-2 text-sm">
+        <li><a class="hover:text-accent" href="/order/">Start an order</a></li>
+        <li><a class="hover:text-accent" href="/free-resume-review/">Free resume review</a></li>
+        <li><a class="hover:text-accent" href="/interview-coaching/">Interview coaching</a></li>
+        {nav.map((n) => <li><a class="hover:text-accent" href={n.href}>{n.label}</a></li>)}
+      </ul>
+    </div>
+
+    <div>
+      <p class="label">Get in touch</p>
+      <ul class="mt-4 grid gap-3 text-sm">
+        {site.email && <li><a class="hover:text-accent" href={`mailto:${site.email}`}>{site.email}</a></li>}
+        {
+          site.phones.map((p) => (
+            <li>
+              <span class="block text-muted">{p.label}</span>
+              <a class="hover:text-accent" href={`tel:${p.number}`}>{p.number}</a>
+            </li>
+          ))
+        }
+        <li><a class="hover:text-accent" href="/contact/#call">Book a free phone consultation</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="border-t border-rule">
+    <div class="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-5 text-xs text-muted sm:flex-row sm:justify-between sm:px-6">
+      <p>&copy; {year} {site.name}. All resumes personally written, never outsourced or automated.</p>
+      <p><a class="hover:text-ink" href="/privacy/">Privacy</a></p>
+    </div>
+  </div>
+</footer>

@@ -1,0 +1,14 @@
+---
+import Base from "../layouts/Base.astro";
+import PageHead from "../components/PageHead.astro";
+import { site } from "../site";
+---
+
+<Base title="Privacy" description="How Resume Pro NC handles the details you send.">
+  <PageHead label="Privacy" title="Your details stay private." />
+  <div class="prose-sheet mx-auto max-w-3xl px-4 py-12 text-muted sm:px-6">
+    <p>When you send a form on this site, your answers and any file you attach are emailed to {site.owner} so she can do the work you asked for. Nothing is stored on this website, and nothing is sold or shared.</p>
+    <p>Forms are delivered by email through Resend. The site is hosted on Netlify. Fonts load from Google Fonts, and the video on one article loads from YouTube.</p>
+    <p>Want your details deleted from email? Write to {site.email} and they will be.</p>
+  </div>
+</Base>

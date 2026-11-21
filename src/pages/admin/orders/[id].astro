@@ -1,0 +1,310 @@
+---
+import Admin from "../../../layouts/Admin.astro";
+import { isAdmin, maxTotalBytes, pickFile, smsLink, telLink, toBase64 } from "../../../lib/admin";
+import { sameOrigin } from "../../../lib/auth";
+import { draftEmail, finalEmail, paidEmail, paymentReminder } from "../../../lib/client-mail";
+import { questionnaire } from "../../../lib/forms";
+import { mailConfig, send, type Email } from "../../../lib/mail";
+import { money, paypalLink } from "../../../lib/order";
+import { formatDay, formatStamp, markPaid, orderKey, saveFile, setStatus, statuses, type OrderRecord } from "../../../lib/records";
+import { store } from "../../../lib/store";
+import { site } from "../../../site";
+
+export const prerender = false;
+
+if (!isAdmin(Astro.cookies)) return Astro.redirect("/admin/login/");
+
+const s = store();
+const id = Astro.params.id ?? "";
+const loaded = await s.getJSON<OrderRecord>(orderKey(id));
+if (!loaded) return new Response("Order not found", { status: 404 });
+const o: OrderRecord = loaded;
+
+const done: Record<string, string> = {
+  notes: "Notes saved.",
+  paid: `Marked paid. ${o.name.split(" ")[0]} got your "Received Payment" email.`,
+  "paid-quiet": "Marked paid. No email was sent.",
+  remind: "Payment link sent.",
+  writing: "Moved to Writing.",
+  draft: "Draft emailed.",
+  final: "Final files emailed. Order moved to Done.",
+  cancel: "Order cancelled.",
+  reopen: "Order reopened.",
+};
+
+const errors: Record<string, string> = {};
+let formError = "";
+let action = "";
+
+if (Astro.request.method === "POST" && sameOrigin(Astro.request)) {
+  const form = await Astro.request.formData();
+  action = String(form.get("action") ?? "");
+  const now = new Date();
+  const cfg = mailConfig();
+  const nancy = cfg.to || site.email;
+  const note = String(form.get("note") ?? "").slice(0, 3000);
+  const canEmail = Boolean(cfg.apiKey);
+  const mail = async (e: Email) => {
+    if (!canEmail) throw new Error("RESEND_API_KEY is not set");
+    await send(e, cfg, o.email);
+  };
+  let result = action;
+
+  try {
+    if (action === "notes") {
+      o.notes = String(form.get("notes") ?? "").slice(0, 20000);
+      const due = String(form.get("dueDate") ?? "");
+      if (due && !/^\d{4}-\d{2}-\d{2}$/.test(due)) errors.dueDate = "Pick a date.";
+      else o.dueDate = due || undefined;
+    } else if (action === "paid") {
+      markPaid(o, now, site.draftDays);
+      if (form.get("notify")) {
+        try {
+          await mail(paidEmail(o, nancy));
+          o.log.push({ at: now.toISOString(), what: "Emailed: payment received, on the schedule" });
+        } catch (err) {
+          console.error(err);
+          formError = "Marked paid, but the email didn't send. Check the email settings, or let them know by text.";
+        }
+      } else result = "paid-quiet";
+    } else if (action === "remind") {
+      const item = `Resume Pro NC: ${o.lines.map((l) => l.name).join(", ")}`;
+      await mail(paymentReminder(o, nancy, paypalLink(site.paypalEmail, o.total, item, { orderId: o.id, siteUrl: site.url })));
+      o.log.push({ at: now.toISOString(), what: "Emailed: payment link" });
+    } else if (action === "writing") {
+      setStatus(o, "writing", now, "Started writing");
+    } else if (action === "draft") {
+      const d = pickFile(form, "draft");
+      if (!d.file || d.bad) errors.draft = "Attach the draft as a Word or PDF file under 4 MB.";
+      else {
+        const ref = await saveFile(s, o.id, d.file, `Draft ${o.draftCount + 1}`, now);
+        await mail(draftEmail(o, nancy, note, [{ filename: ref.filename, content: await toBase64(await d.file.arrayBuffer()) }], o.draftCount + 1, now));
+        o.files.push(ref);
+        o.draftCount += 1;
+        setStatus(o, "draft-sent", now, `Emailed draft ${o.draftCount}`);
+      }
+    } else if (action === "final") {
+      const w = pickFile(form, "word", [".doc", ".docx"]);
+      const p = pickFile(form, "pdf", [".pdf"]);
+      if (!w.file || w.bad) errors.word = "Attach the final Word file (.docx) under 4 MB.";
+      if (!p.file || p.bad) errors.pdf = "Attach the final PDF under 4 MB.";
+      if (w.file && p.file && w.file.size + p.file.size > maxTotalBytes) errors.pdf = "The two files together must be under 5.5 MB.";
+      if (!Object.keys(errors).length && w.file && p.file) {
+        const files = [w.file, p.file];
+        const attachments = await Promise.all(files.map(async (f) => ({ filename: f.name.replace(/[^\w.\- ]/g, "_"), content: await toBase64(await f.arrayBuffer()) })));
+        await mail(finalEmail(o, nancy, note, attachments, site.reviewRequestUrl));
+        o.files.push(await saveFile(s, o.id, w.file, "Final (Word)", now), await saveFile(s, o.id, p.file, "Final (PDF)", now));
+        setStatus(o, "delivered", now, "Emailed final Word and PDF");
+      }
+    } else if (action === "cancel") {
+      setStatus(o, "cancelled", now, "Cancelled");
+    } else if (action === "reopen") {
+      setStatus(o, o.paidAt ? "writing" : "awaiting-payment", now, "Reopened");
+    }
+  } catch (err) {
+    console.error("Dashboard action failed", err);
+    formError = canEmail ? "The email didn't send. Nothing was changed. Try again in a minute." : "Email isn't set up yet (RESEND_API_KEY in Netlify), so nothing was sent.";
+  }
+
+  if (Object.keys(errors).length) formError ||= "Fix the highlighted field below.";
+  else if (!formError || action === "paid") {
+    await s.setJSON(orderKey(o.id), o);
+    if (!formError) return Astro.redirect(`/admin/orders/${o.id}/?done=${result}`, 303);
+  }
+}
+
+const flash = done[Astro.url.searchParams.get("done") ?? ""] ?? "";
+const first = o.name.split(" ")[0];
+const address = [o.address.street, [o.address.city, o.address.state].filter(Boolean).join(", "), o.address.zip].filter(Boolean).join(" ");
+const active = !["delivered", "cancelled"].includes(o.status);
+const isUrl = (v: string) => v.startsWith("http://") || v.startsWith("https://");
+const box = "rounded-card border border-rule bg-sheet p-5 sm:p-6";
+const h2 = "font-display text-2xl";
+const fieldError = (k: string) => (errors[k] ? { "aria-invalid": "true" as const, autofocus: Object.keys(errors)[0] === k } : {});
+---
+
+<Admin title={o.name}>
+  <a href="/admin/" class="text-sm font-semibold text-accent underline underline-offset-4">All orders</a>
+  <div class="mt-4 flex flex-wrap items-start justify-between gap-4">
+    <div>
+      <h1 class="text-3xl sm:text-4xl">{o.name}</h1>
+      <p class="mt-1 text-muted">{o.lines.map((l) => l.name).join(", ")} · {money(o.total)}</p>
+    </div>
+    <div class="text-right">
+      <span class="rounded-full bg-ink px-3 py-1 text-sm font-semibold text-inverse">{statuses[o.status]}</span>
+      {o.dueDate && active && <p class="mt-2 text-sm text-muted">First draft due {formatDay(o.dueDate)}</p>}
+    </div>
+  </div>
+
+  {flash && <p role="status" class="mt-6 rounded bg-accent-soft p-3 text-sm font-semibold text-accent">{flash}</p>}
+  {formError && <p role="alert" class="mt-6 rounded border border-danger p-3 text-sm font-semibold text-danger">{formError}</p>}
+
+  <div class="mt-8 grid gap-6 lg:grid-cols-[1fr_22rem]">
+    <div class="flex flex-col gap-6">
+      <!-- Next step -->
+      <section class={box} aria-labelledby="next">
+        <h2 id="next" class={h2}>Next step</h2>
+        {o.status === "awaiting-payment" && (
+          <div class="mt-4 flex flex-col gap-4">
+            <p class="text-sm text-muted">{site.paypalEmail ? "When they pay through PayPal, this happens on its own: the order moves to Queued and they get your \"Received Payment\" email. If they pay another way, mark it here." : "When the payment comes in, mark it paid."} They go on your writing schedule, and your dashboard sets the draft due {site.draftDays} business days out (you can change it).</p>
+            <form method="post" class="flex flex-col gap-3">
+              <input type="hidden" name="action" value="paid" />
+              <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="notify" checked class="size-4 accent-[var(--color-accent)]" /> Send {first} your "Received Payment" email</label>
+              <details class="text-sm text-muted"><summary class="cursor-pointer">What the email says</summary><div class="mt-2 whitespace-pre-line">{paidEmail(o, site.email).text}</div></details>
+              <button class="btn btn-primary w-fit">Payment received</button>
+            </form>
+            <form method="post">
+              <input type="hidden" name="action" value="remind" />
+              <button class="text-sm font-semibold text-accent underline underline-offset-4">Resend the "questionnaire received" email with the payment link</button>
+            </form>
+          </div>
+        )}
+        {o.status === "queued" && (
+          <form method="post" class="mt-4 flex flex-wrap items-center gap-4">
+            <input type="hidden" name="action" value="writing" />
+            <p class="text-sm text-muted">Paid {o.paidAt && formatStamp(o.paidAt)}. Ready when you are.</p>
+            <button class="btn btn-primary">Start writing</button>
+          </form>
+        )}
+        {(o.status === "queued" || o.status === "writing" || o.status === "draft-sent") && (
+          <form method="post" enctype="multipart/form-data" class="mt-6 flex flex-col gap-4 border-t border-rule pt-6">
+            <input type="hidden" name="action" value="draft" />
+            <h3 class="font-semibold">{o.draftCount ? `Send revised draft (draft ${o.draftCount + 1})` : "Send the first draft"}</h3>
+            <div class="flex flex-col gap-1.5">
+              <label for="draft" class="text-sm font-semibold">Draft file (Word or PDF)</label>
+              <input id="draft" name="draft" type="file" accept=".pdf,.doc,.docx" required autocomplete="off" aria-describedby="draft-error" {...fieldError("draft")} class="field" />
+              <p id="draft-error" class="text-sm font-semibold text-danger" hidden={!errors.draft}>{errors.draft}</p>
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <label for="draft-note" class="text-sm font-semibold">Note to {first} <span class="font-normal text-muted">(optional)</span></label>
+              <textarea id="draft-note" name="note" rows="3" autocomplete="off" class="field" placeholder="Anything you want to point out in this draft."></textarea>
+            </div>
+            <details class="text-sm text-muted"><summary class="cursor-pointer">What the email says</summary><div class="mt-2 whitespace-pre-line">{draftEmail(o, site.email, "", [{ filename: "draft.pdf", content: "" }], o.draftCount + 1, new Date()).text}</div></details>
+            <button class="btn btn-primary w-fit">Email the draft</button>
+          </form>
+        )}
+        {(o.status === "writing" || o.status === "draft-sent") && (
+          <form method="post" enctype="multipart/form-data" class="mt-6 flex flex-col gap-4 border-t border-rule pt-6">
+            <input type="hidden" name="action" value="final" />
+            <h3 class="font-semibold">Approved? Send the final files</h3>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div class="flex flex-col gap-1.5">
+                <label for="word" class="text-sm font-semibold">Final Word file (.docx)</label>
+                <input id="word" name="word" type="file" accept=".doc,.docx" required autocomplete="off" aria-describedby="word-error" {...fieldError("word")} class="field" />
+                <p id="word-error" class="text-sm font-semibold text-danger" hidden={!errors.word}>{errors.word}</p>
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label for="pdf" class="text-sm font-semibold">Final PDF</label>
+                <input id="pdf" name="pdf" type="file" accept=".pdf" required autocomplete="off" aria-describedby="pdf-error" {...fieldError("pdf")} class="field" />
+                <p id="pdf-error" class="text-sm font-semibold text-danger" hidden={!errors.pdf}>{errors.pdf}</p>
+              </div>
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <label for="final-note" class="text-sm font-semibold">Note to {first} <span class="font-normal text-muted">(optional)</span></label>
+              <textarea id="final-note" name="note" rows="3" autocomplete="off" class="field"></textarea>
+            </div>
+            <details class="text-sm text-muted"><summary class="cursor-pointer">What the email says</summary><div class="mt-2 whitespace-pre-line">{finalEmail(o, site.email, "", [], site.reviewRequestUrl).text}</div></details>
+            <button class="btn btn-primary w-fit">Email the final files</button>
+          </form>
+        )}
+        {!active && (
+          <form method="post" class="mt-4 flex flex-wrap items-center gap-4">
+            <input type="hidden" name="action" value="reopen" />
+            <p class="text-sm text-muted">{o.status === "delivered" && o.deliveredAt ? `Delivered ${formatStamp(o.deliveredAt)}.` : "This order is closed."} Need to send an update?</p>
+            <button class="btn btn-quiet">Reopen</button>
+          </form>
+        )}
+      </section>
+
+      <!-- Questionnaire -->
+      <section class={box} aria-labelledby="q">
+        <h2 id="q" class={h2}>Questionnaire</h2>
+        <dl class="mt-4 flex flex-col gap-5">
+          {questionnaire.filter((q) => o.answers[q.id]).map((q) => (
+            <div><dt class="text-sm font-semibold">{q.label}</dt><dd class="mt-1 whitespace-pre-line text-muted">{o.answers[q.id]}</dd></div>
+          ))}
+          {o.careerChange && <div><dt class="text-sm font-semibold">Career change</dt><dd class="mt-1 text-muted">{o.careerChange}</dd></div>}
+          {o.rush && <div><dt class="text-sm font-semibold">Deadline or rush request</dt><dd class="mt-1 font-semibold text-danger">{o.rush}</dd></div>}
+        </dl>
+      </section>
+
+      {o.postings.length > 0 && (
+        <section class={box} aria-labelledby="postings">
+          <h2 id="postings" class={h2}>Job postings they're applying for</h2>
+          <ul class="mt-4 flex flex-col gap-2">
+            {o.postings.map((p) => (
+              <li class="break-all">{isUrl(p) ? <a href={p} target="_blank" rel="noopener noreferrer" class="text-accent underline underline-offset-4">{p}</a> : p}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {o.jobs.length > 0 && (
+        <section class={box} aria-labelledby="jobs">
+          <h2 id="jobs" class={h2}>Employment history</h2>
+          <ol class="mt-4 flex flex-col gap-5">
+            {o.jobs.map((j, i) => (
+              <li><p class="text-sm font-semibold">Job {i + 1}{i === 0 && " (most recent)"}</p><p class="mt-1 whitespace-pre-line text-muted">{j}</p></li>
+            ))}
+          </ol>
+        </section>
+      )}
+    </div>
+
+    <aside class="flex flex-col gap-6">
+      <section class={box} aria-labelledby="client">
+        <h2 id="client" class={h2}>Client</h2>
+        <dl class="mt-4 flex flex-col gap-3 text-sm">
+          <div><dt class="font-semibold">Email</dt><dd><a href={`mailto:${o.email}`} class="text-accent underline underline-offset-4">{o.email}</a></dd></div>
+          {o.phone && (
+            <div><dt class="font-semibold">Phone</dt><dd>{o.phone} · <a href={telLink(o.phone)} class="text-accent underline underline-offset-4">Call</a> · <a href={smsLink(o.phone)} class="text-accent underline underline-offset-4">Text</a></dd></div>
+          )}
+          {address && <div><dt class="font-semibold">Address</dt><dd class="text-muted">{address}</dd></div>}
+          {o.linkedin && <div><dt class="font-semibold">LinkedIn</dt><dd class="break-all"><a href={isUrl(o.linkedin) ? o.linkedin : `https://${o.linkedin}`} target="_blank" rel="noopener noreferrer" class="text-accent underline underline-offset-4">{o.linkedin}</a></dd></div>}
+          <div><dt class="font-semibold">Ordered</dt><dd class="text-muted">{formatStamp(o.createdAt)}</dd></div>
+        </dl>
+      </section>
+
+      <section class={box} aria-labelledby="files">
+        <h2 id="files" class={h2}>Files</h2>
+        {o.files.length ? (
+          <ul class="mt-4 flex flex-col gap-3 text-sm">
+            {o.files.map((f) => (
+              <li><a href={`/admin/files/${f.key.replace(/^file\//, "")}`} class="font-semibold text-accent underline underline-offset-4">{f.label}</a><br /><span class="text-muted">{f.filename} · {formatStamp(f.at)}</span></li>
+            ))}
+          </ul>
+        ) : <p class="mt-3 text-sm text-muted">No files yet.</p>}
+      </section>
+
+      <section class={box} aria-labelledby="notes">
+        <h2 id="notes" class={h2}>Your notes</h2>
+        <form method="post" class="mt-4 flex flex-col gap-4">
+          <input type="hidden" name="action" value="notes" />
+          <div class="flex flex-col gap-1.5">
+            <label for="notes-text" class="text-sm font-semibold">Call notes and reminders</label>
+            <textarea id="notes-text" name="notes" rows="6" autocomplete="off" class="field">{o.notes}</textarea>
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label for="dueDate" class="text-sm font-semibold">First draft due</label>
+            <input id="dueDate" name="dueDate" type="date" value={o.dueDate ?? ""} autocomplete="off" aria-describedby="dueDate-error" {...fieldError("dueDate")} class="field" />
+            <p id="dueDate-error" class="text-sm font-semibold text-danger" hidden={!errors.dueDate}>{errors.dueDate}</p>
+          </div>
+          <button class="btn btn-quiet w-fit">Save notes</button>
+        </form>
+      </section>
+
+      <section class={box} aria-labelledby="log">
+        <h2 id="log" class={h2}>History</h2>
+        <ol class="mt-4 flex flex-col gap-3 text-sm">
+          {[...o.log].reverse().map((l) => <li><p>{l.what}</p><p class="text-xs text-muted">{formatStamp(l.at)}</p></li>)}
+        </ol>
+        {active && (
+          <form method="post" class="mt-5 border-t border-rule pt-4">
+            <input type="hidden" name="action" value="cancel" />
+            <button class="text-sm text-danger underline underline-offset-4">Cancel this order</button>
+          </form>
+        )}
+      </section>
+    </aside>
+  </div>
+</Admin>

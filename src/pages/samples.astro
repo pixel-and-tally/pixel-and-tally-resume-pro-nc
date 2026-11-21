@@ -1,0 +1,37 @@
+---
+import Base from "../layouts/Base.astro";
+import PageHead from "../components/PageHead.astro";
+import { samples } from "../site";
+---
+
+<Base title="Sample Resumes" description="Samples of resumes written by Nancy Turner. Every resume is personalized for one client, never a template.">
+  <PageHead
+    label="Samples"
+    title="Samples of my work."
+    lead="These samples give you an idea of my writing style. Each one was created for a specific client based on their abilities, experience, skills, education and career path. Yours will be written for you and you alone, never a copy of someone else's. You are one of a kind, and you'll be treated that way."
+  />
+
+  <div class="mx-auto max-w-6xl px-4 py-14 sm:px-6">
+    {
+      samples.length ? (
+        <ul class="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          {samples.map((s) => (
+            <li>
+              <a href={s.full} target="_blank" rel="noopener" class="group block">
+                <img src={s.thumb} alt={s.alt} width="510" height="660" loading="lazy"
+                  class="aspect-[17/22] w-full rounded-card border border-rule bg-sheet object-cover shadow-[var(--shadow-sheet)] transition-transform group-hover:-translate-y-1" />
+                <span class="mt-3 block text-sm text-muted group-hover:text-accent">{s.alt}, view full size</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p class="text-muted">New samples are on the way. Ask me for one that fits your field.</p>
+      )
+    }
+    <div class="mt-14 flex flex-col gap-3 border-t border-rule pt-10 sm:flex-row">
+      <a href="/order/" class="btn btn-primary">Start an order</a>
+      <a href="/free-resume-review/" class="btn btn-quiet">Get a free review first</a>
+    </div>
+  </div>
+</Base>
