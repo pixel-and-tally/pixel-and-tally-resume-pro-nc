@@ -152,3 +152,27 @@ export function finalEmail(o: OrderRecord, nancy: string, note: string, files: A
     "Thank you for your business!",
   ], files);
 }
+
+/** Sent automatically when someone uses the contact form, so they know it arrived. */
+export function contactReceived(name: string, callAt: string, nancy: string): Email {
+  const phone = phones[0]?.number;
+  return letter(callAt ? "Your phone consultation request" : "I received your message", nancy, [
+    `Hi ${first(name)},`,
+    callAt
+      ? `Thank you for requesting a free phone consultation for ${callAt}. Please note that this time is not confirmed yet. I'll reply shortly to confirm it or suggest another time that works.`
+      : "Thank you for reaching out! I received your message and will get back to you within one business day.",
+    ...(phone ? [`If you need me sooner, you're welcome to call or text ${phone}.`] : []),
+    "If you don't see my reply, please check your spam or junk folder.",
+    "Thank you!",
+  ]);
+}
+
+/** Sent automatically when a resume comes in for the free review. */
+export function reviewReceived(name: string, nancy: string): Email {
+  return letter("I received your resume", nancy, [
+    `Hi ${first(name)},`,
+    "Thank you for sending your resume for a free review. I received it and will email you my honest feedback, usually within a couple of business days.",
+    "If you don't see my reply, please check your spam or junk folder.",
+    "Thank you!",
+  ]);
+}

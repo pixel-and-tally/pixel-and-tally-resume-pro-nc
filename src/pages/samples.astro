@@ -15,12 +15,12 @@ import { samples } from "../site";
     {
       samples.length ? (
         <ul class="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          {samples.map((s) => (
+          {samples.map((s, i) => (
             <li>
-              <a href={s.full} target="_blank" rel="noopener" class="group block">
+              <a href={s.full} data-sample={i} class="group block">
                 <img src={s.thumb} alt={s.alt} width="510" height="660" loading="lazy"
                   class="aspect-[17/22] w-full rounded-card border border-rule bg-sheet object-cover shadow-[var(--shadow-sheet)] transition-transform group-hover:-translate-y-1" />
-                <span class="mt-3 block text-sm text-muted group-hover:text-accent">{s.alt}, view full size</span>
+                <span class="mt-3 block text-sm text-muted group-hover:text-accent">{s.alt}, view larger</span>
               </a>
             </li>
           ))}
@@ -29,9 +29,62 @@ import { samples } from "../site";
         <p class="text-muted">New samples are on the way. Ask me for one that fits your field.</p>
       )
     }
+    {samples.length > 0 && (
+      <dialog data-viewer aria-label="Sample resume viewer" class="m-auto h-dvh max-h-none w-full max-w-none bg-transparent p-0 backdrop:bg-ink/85">
+        <div class="flex h-full flex-col items-center gap-3 px-3 py-3 sm:px-6 sm:py-5">
+          <div class="flex w-full max-w-3xl items-center justify-between text-paper">
+            <p class="text-sm" data-count aria-live="polite"></p>
+            <button type="button" data-close class="rounded-card px-3 py-2 text-2xl leading-none hover:bg-paper/15 focus-visible:outline-2 focus-visible:outline-paper" aria-label="Close">&times;</button>
+          </div>
+          <div class="flex min-h-0 w-full max-w-3xl flex-1 items-center justify-center">
+            <img data-full alt="" class="max-h-full max-w-full rounded-card bg-sheet object-contain shadow-[var(--shadow-sheet)]" />
+          </div>
+          <div class="flex w-full max-w-3xl items-center justify-between gap-3">
+            <button type="button" data-prev class="btn btn-quiet !bg-paper">&larr; Previous</button>
+            <button type="button" data-next class="btn btn-quiet !bg-paper">Next &rarr;</button>
+          </div>
+        </div>
+      </dialog>
+    )}
     <div class="mt-14 flex flex-col gap-3 border-t border-rule pt-10 sm:flex-row">
       <a href="/order/" class="btn btn-primary">Start an order</a>
       <a href="/free-resume-review/" class="btn btn-quiet">Get a free review first</a>
     </div>
   </div>
 </Base>
+
+<script>
+  // One viewer for all samples: previous, next, close (also arrow keys, Esc, or a tap outside).
+  // Without JavaScript the links still open the full-size image.
+  const dialog = document.querySelector<HTMLDialogElement>("[data-viewer]");
+  const links = Array.from(document.querySelectorAll<HTMLAnchorElement>("[data-sample]"));
+  if (dialog && links.length && typeof dialog.showModal === "function") {
+    const img = dialog.querySelector<HTMLImageElement>("[data-full]")!;
+    const count = dialog.querySelector<HTMLElement>("[data-count]")!;
+    let at = 0;
+    const show = (i: number) => {
+      at = (i + links.length) % links.length;
+      const thumb = links[at].querySelector("img");
+      img.src = links[at].href;
+      img.alt = thumb?.alt ?? "";
+      count.textContent = `Sample ${at + 1} of ${links.length}`;
+    };
+    links.forEach((a, i) =>
+      a.addEventListener("click", (e) => {
+        e.preventDefault();
+        show(i);
+        dialog.showModal();
+      }),
+    );
+    dialog.querySelector("[data-prev]")!.addEventListener("click", () => show(at - 1));
+    dialog.querySelector("[data-next]")!.addEventListener("click", () => show(at + 1));
+    dialog.querySelector("[data-close]")!.addEventListener("click", () => dialog.close());
+    dialog.addEventListener("click", (e) => {
+      if (e.target === dialog || (e.target as HTMLElement).matches(".flex-1")) dialog.close();
+    });
+    dialog.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowLeft") show(at - 1);
+      if (e.key === "ArrowRight") show(at + 1);
+    });
+  }
+</script>

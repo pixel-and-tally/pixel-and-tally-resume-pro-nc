@@ -1,13 +1,8 @@
 ---
-// Wordmark: a small page mark and the name set in the display serif.
+// Nancy's logo: "RESUME PRO" in gold with "Resume Writing Service" script (public/logo.png, white made transparent).
+type Props = { class?: string };
+const { class: cls = "h-10 sm:h-12" } = Astro.props;
 ---
-<a href="/" class="group inline-flex items-center gap-2.5" aria-label="Resume Pro NC, home">
-  <svg viewBox="0 0 32 32" class="size-8 shrink-0" aria-hidden="true">
-    <rect width="32" height="32" rx="6" class="fill-ink"></rect>
-    <path d="M10 7h9l4 4v14H10z" class="fill-paper"></path>
-    <path d="M19 7v4h4M13 15h7M13 18h7M13 21h4" fill="none" class="stroke-accent" stroke-width="1.5"></path>
-  </svg>
-  <span class="font-display text-[1.35rem] leading-none font-medium tracking-tight">
-    Resume Pro <span class="text-accent italic">NC</span>
-  </span>
+<a href="/" class="inline-flex shrink-0 items-center" aria-label="Resume Pro NC, home">
+  <img src="/logo.png" alt="Resume Pro, Resume Writing Service" width="654" height="163" class:list={["w-auto", cls]} />
 </a>

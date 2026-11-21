@@ -1,3 +1,4 @@
+import { reviewReceived } from "../../lib/client-mail";
 import { formEndpoint } from "../../lib/endpoint";
 import { parseReview } from "../../lib/forms";
 import { reviewEmail } from "../../lib/mail";
@@ -16,6 +17,9 @@ export const POST = formEndpoint({
     await s.setJSON(messageKey(id), messageFromReview(v, id, now, resume));
     return { id, path: `/admin/messages/${id}/` };
   },
-  emails: async (v, _cfg, link) => [{ email: await reviewEmail(v, link) }],
+  emails: async (v, cfg, link) => [
+    { email: await reviewEmail(v, link) },
+    { email: reviewReceived(v.name, cfg.to), to: v.email, optional: true },
+  ],
   thanks: () => "/thanks/?form=review",
 });

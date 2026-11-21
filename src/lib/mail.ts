@@ -14,7 +14,7 @@ const section = (title: string, body: string) => (body ? `${title}\n${body}\n` :
 export const callLabel = (v: Pick<ContactValue, "callDate" | "callTime">) =>
   v.callDate ? `${formatDate(v.callDate)} at ${formatTime(v.callTime)} Eastern` : "";
 
-export function contactEmail(v: ContactValue, availability: Availability, now: Date, dashboardUrl = ""): Email {
+export function contactEmail(v: ContactValue, availability: Availability, now: Date, dashboardUrl = "", calendarUrl = ""): Email {
   const call = callLabel(v);
   const lines = [
     `Name: ${v.name}`,
@@ -24,7 +24,14 @@ export function contactEmail(v: ContactValue, availability: Availability, now: D
     ...(v.subject ? [`Subject: ${v.subject}`] : []),
     "",
     v.message || "(No message)",
-    ...(call ? ["", "The call isn't confirmed until you reply. The attached file adds it to your calendar."] : []),
+    ...(call
+      ? [
+          "",
+          "The call isn't confirmed until you reply.",
+          ...(calendarUrl ? [`Add it to your phone's calendar (tap, then Add to Calendar): ${calendarUrl}`] : []),
+          "The attached consultation.ics file does the same on a computer.",
+        ]
+      : []),
     ...dashboardLine(dashboardUrl),
   ];
   return {
