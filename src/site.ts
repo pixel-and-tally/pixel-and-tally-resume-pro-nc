@@ -135,11 +135,13 @@ export const reviewCriteria = [
   "Grammar and punctuation",
 ];
 
+// Nancy's real process, in order (Blake, 2026-11-20): talk first, then details, then payment, then writing.
 export const steps = [
-  { title: "Place your order", body: "Pick your resume level and any add-ons. You see the total before you send anything." },
-  { title: "Share your details", body: "Fill in the questionnaire and attach your current resume if you have one. Facts and dates are all I need." },
-  { title: "Review your draft", body: `I write your first draft, usually within ${site.turnaround}, and we go over it together.` },
-  { title: "Approve and go", body: `I revise until you're 100% happy, then you have ${site.revisionWindowDays} more days of free revisions.` },
+  { title: "Call or text me", body: "Reach out by phone, text or the contact form. I'll call you back to learn about your goals and recommend the right service." },
+  { title: "Share your details", body: "Fill in the questionnaire, attach your current resume, and add links to the jobs you're applying for." },
+  { title: "Pay to get on my schedule", body: "I send you a payment link. Once payment and your questionnaire are in, you're on my writing schedule." },
+  { title: "Review your draft", body: `I email your first draft, usually within ${site.turnaround}. I revise until you're 100% happy.` },
+  { title: "Get your final files", body: `You get a Word file for online applications and a PDF for email and print, plus ${site.revisionWindowDays} days of free revisions.` },
 ];
 
 /** Real client quotes from the old site, as written. Add new ones only with permission. */
