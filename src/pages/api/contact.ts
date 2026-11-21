@@ -14,7 +14,7 @@ export const POST = formEndpoint({
   save: async (v, now) => {
     const id = newId(now);
     await store().setJSON(messageKey(id), messageFromContact(v, id, now, callLabel(v)));
-    return `/admin/messages/${id}/`;
+    return { id, path: `/admin/messages/${id}/` };
   },
   emails: async (v, _cfg, link) => [{ email: contactEmail(v, availability, new Date(), link) }],
   thanks: (v) => (v.callDate ? "/thanks/?form=call" : "/thanks/?form=contact"),

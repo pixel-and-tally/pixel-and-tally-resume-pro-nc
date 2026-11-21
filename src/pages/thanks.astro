@@ -52,6 +52,12 @@ import { site } from "../site";
       a.hidden = false;
       root.querySelector<HTMLElement>("[data-pay-note]")!.textContent = "Pay securely through PayPal by credit card, debit card or PayPal account. You don't need a PayPal account. Writing starts once payment is received.";
     }
+  } else if (kind === "paid") {
+    title.textContent = "Thank you. Your payment is in.";
+    lead.textContent = "Your questionnaire and payment are received, so you're on my writing schedule. You'll get a confirmation email shortly, and I'll contact you if I need anything else while I write.";
+  } else if (kind === "unpaid") {
+    title.textContent = "Your order is saved.";
+    lead.textContent = "You haven't paid yet. I've emailed you a link so you can pay any time. Writing starts once payment is received.";
   } else if (kind === "review") {
     title.textContent = "Thank you. Your resume is in.";
     lead.textContent = "I'll send your free review by email, usually within a couple of business days.";

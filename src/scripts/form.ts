@@ -87,9 +87,9 @@ export function wireForm(form: HTMLFormElement, opts: FormOptions) {
     try {
       const data = new FormData(form);
       const res = await fetch(form.action, { method: "POST", body: data, headers: { Accept: "application/json" } });
-      const body = (await res.json().catch(() => ({}))) as { ok?: boolean; invalid?: string[] };
+      const body = (await res.json().catch(() => ({}))) as { ok?: boolean; invalid?: string[]; next?: string };
       if (res.ok && body.ok) {
-        location.href = opts.successUrl(data);
+        location.href = body.next || opts.successUrl(data);
         return;
       }
       if (body.invalid?.length) fail(body.invalid);

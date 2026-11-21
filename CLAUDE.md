@@ -23,8 +23,10 @@ Rule from the rebuild: no feature of the old site may be lost. Look: clean and p
   (`src/lib/client-mail.ts`) are Nancy's own wording from her real emails, keep it: questionnaire received + payment
   link (automatic), Resume Information (inquiry reply, editable), Received Payment, Resume Draft, final Word + PDF
   with her ATS advice and `reviewRequestUrl`. Sent as text + simple HTML with her signature. Saving never blocks a form: the email to Nancy still has everything.
-- Payment: PayPal button for the exact total (`paypalEmail` in `src/site.ts`, nancy@resumepronc.com)
-  on the thank-you page and in the client's receipt. Empty `paypalEmail` switches all copy to "I email an invoice".
+- Payment: "Check out" on the order form saves the order, then sends the client to PayPal for the exact total
+  (`paypalEmail` in `src/site.ts`, nancy@resumepronc.com), with the order id as `custom`. PayPal reports the payment to
+  `/api/paypal-ipn` (`src/lib/paypal.ts`), which verifies it, marks the order paid and sends "Received Payment".
+  After a phone call Nancy sends the order link from `/admin/send-link/` (email, or a one-tap text). Empty `paypalEmail` switches all copy to "I email an invoice".
 - Blog ("Career Tips"): Markdown in `src/content/blog/`. `public/_redirects` maps every old Wix URL
   (pages and all 40 `/single-post/` links) to the new pages; `tests/redirects.test.ts` checks them.
 - Node 22. `npm run dev`, `npm run verify` (astro check + vitest + build). `astro preview` does not

@@ -71,6 +71,9 @@ const box = "rounded-card border border-rule bg-sheet p-5 sm:p-6";
           {m.files.map((f) => <li><a href={`/admin/files/${f.key.replace(/^file\//, "")}`} class="font-semibold text-accent underline underline-offset-4">{f.label}</a> <span class="text-muted">{f.filename}</span></li>)}
         </ul>
       )}
+      <div class="mt-8 flex flex-wrap items-center gap-3 border-t border-rule pt-6">
+        <a href={`/admin/send-link/?from=${m.id}`} class="btn btn-primary">Already talked? Send the order link</a>
+      </div>
       <form method="post" class="mt-8 flex flex-col gap-4 border-t border-rule pt-6">
         <input type="hidden" name="action" value="reply" />
         <h2 class="font-display text-2xl">Send your "Resume Information" email</h2>

@@ -162,8 +162,8 @@ const choice =
       </fieldset>
 
       <div class="flex flex-col gap-3 border-t border-rule pt-10">
-        <button type="submit" class="btn btn-primary w-full text-lg sm:w-fit">Place my order</button>
-        <p class="text-xs text-muted">{site.paypalEmail ? "Next you'll pay through PayPal by card or PayPal account, and writing starts once it's paid." : "Nothing is charged now. I'll email an invoice, and writing starts once it's paid."} Your details are only used for your order.</p>
+        <button type="submit" class="btn btn-primary w-full text-lg sm:w-fit">{site.paypalEmail ? "Check out" : "Place my order"}</button>
+        <p class="text-xs text-muted">{site.paypalEmail ? "Next you'll go to PayPal to pay by card or PayPal account (no PayPal account needed). Once payment is received, you're on my writing schedule." : "Nothing is charged now. I'll email an invoice, and writing starts once it's paid."} Your details are only used for your order.</p>
       </div>
     </form>
 

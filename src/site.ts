@@ -29,7 +29,7 @@ export const site = {
   paypalEmail: "nancy@resumepronc.com",
   googleReviewsUrl: "",
   /** Link clients use to leave Nancy a review (sent with the final files). Empty = the line is left out. */
-  reviewRequestUrl: "",
+  reviewRequestUrl: "https://www.google.com/maps/place//data=!4m3!3m2!1s0x8856bdc166854ff3:0xb222728c75ae2bd9!12e1?source=g.page.m.ia._&laa=nmx-review-solicitation-ia2",
 
   turnaround: "10 to 12 days", // Nancy's current turnaround, from her client emails (2026-11-20). The old site said 5 to 7 business days.
   /** Days from payment to first draft, for the due date on Nancy's dashboard. */

@@ -14,7 +14,7 @@ export const POST = formEndpoint({
     const id = newId(now);
     const resume = await saveFile(s, id, v.resume, "Resume to review", now);
     await s.setJSON(messageKey(id), messageFromReview(v, id, now, resume));
-    return `/admin/messages/${id}/`;
+    return { id, path: `/admin/messages/${id}/` };
   },
   emails: async (v, _cfg, link) => [{ email: await reviewEmail(v, link) }],
   thanks: () => "/thanks/?form=review",

@@ -30,8 +30,15 @@ export function priceOrder(sel: Selection, services: Service[]): Priced {
   return { lines, total: lines.reduce((sum, l) => sum + l.price, 0), problems };
 }
 
+export type PayOptions = {
+  /** Order id: PayPal sends it back so the site can match the payment. */
+  orderId?: string;
+  /** Full site address, e.g. https://www.resumepronc.com, for the return and notify URLs. */
+  siteUrl?: string;
+};
+
 /** PayPal "Buy Now" link for the exact total, or "" when no PayPal account is set. */
-export function paypalLink(business: string, total: number, item: string): string {
+export function paypalLink(business: string, total: number, item: string, opts: PayOptions = {}): string {
   if (!business || total <= 0) return "";
   const q = new URLSearchParams({
     cmd: "_xclick",
@@ -41,5 +48,15 @@ export function paypalLink(business: string, total: number, item: string): strin
     currency_code: "USD",
     no_shipping: "1",
   });
+  if (opts.orderId) {
+    q.set("custom", opts.orderId);
+    q.set("invoice", opts.orderId);
+  }
+  if (opts.siteUrl) {
+    q.set("notify_url", `${opts.siteUrl}/api/paypal-ipn`);
+    q.set("return", `${opts.siteUrl}/thanks/?form=paid`);
+    q.set("rm", "1");
+    q.set("cancel_return", `${opts.siteUrl}/thanks/?form=unpaid`);
+  }
   return `https://www.paypal.com/cgi-bin/webscr?${q}`;
 }

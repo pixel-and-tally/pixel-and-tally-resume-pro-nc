@@ -48,6 +48,8 @@ export type OrderRecord = {
   files: FileRef[];
   notes: string;
   paidAt?: string;
+  /** PayPal transaction id, when PayPal reported the payment. */
+  paypalTxn?: string;
   /** First draft due, YYYY-MM-DD (Eastern). */
   dueDate?: string;
   draftCount: number;

@@ -76,6 +76,28 @@ export function questionnaireReceived(name: string, total: number, items: string
   ]);
 }
 
+/** The order page, with the package Nancy suggested on the call already picked. */
+export const orderLink = (level = "") => `${site.url}/order/${level ? `?resume=${encodeURIComponent(level)}` : ""}`;
+
+/** After the phone call: where to pick services, fill out the questionnaire and check out. Nancy can edit it. */
+export function orderLinkText(name: string): string {
+  return [
+    `Hi ${first(name)},`,
+    "Thank you for taking the time to speak with me today! As promised, here is the link where you can choose your services, complete my resume questionnaire, upload your existing resume, and check out.",
+    "Please note that payment must be received prior to being placed into my resume writing schedule and starting the writing process.",
+    "Do not hesitate to call if you have any questions or require additional information from me.",
+    "Thank you!",
+  ].join("\n\n");
+}
+
+export function orderLinkEmail(body: string, link: string, nancy: string): Email {
+  const paras: Para[] = body.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+  // The link goes right after the paragraph that mentions it (or after the greeting).
+  const at = Math.max(paras.findIndex((p) => typeof p === "string" && /check out|link/i.test(p)), 0) + 1;
+  paras.splice(at, 0, { before: "", link: { text: "Click here to choose your services and get started", href: link } });
+  return letter("Your Resume Pro NC Order Link", nancy, paras);
+}
+
 export const paymentReminder = (o: OrderRecord, nancy: string, payLink: string) =>
   questionnaireReceived(o.name, o.total, o.lines.map((l) => l.name), nancy, payLink);
 
@@ -115,9 +137,9 @@ export function finalEmail(o: OrderRecord, nancy: string, note: string, files: A
     ...(note.trim() ? [note.trim()] : []),
     wordVsPdf,
     {
-      before: "I encourage you to take a look at the following link that will explain why some MS Word documents, fonts, and formats appear very different when viewed or printed on one system or device as compared to another. PDF files cannot be manipulated and will always maintain the same format. Word files, however, can appear totally different depending on your computer, iPad, printer, default margins, edition of Word you are using, etc. ",
-      link: { text: "Why Word documents look different on different computers", href: formatLink },
-      after: ".",
+      before: "I encourage you to take a look at ",
+      link: { text: "this short article", href: formatLink },
+      after: ", which explains why some MS Word documents, fonts, and formats appear very different when viewed or printed on one system or device as compared to another. PDF files cannot be manipulated and will always maintain the same format. Word files, however, can appear totally different depending on your computer, iPad, printer, default margins, edition of Word you are using, etc.",
     },
     ...(reviewUrl
       ? [{

@@ -40,7 +40,10 @@ const badge = (st: string) =>
       <p class="label">Dashboard</p>
       <h1 class="mt-2 text-3xl sm:text-4xl">Your orders</h1>
     </div>
-    <p class="text-sm text-muted">{orders.length} orders, {messages.length} messages in total</p>
+    <div class="flex flex-col items-end gap-2">
+      <a href="/admin/send-link/" class="btn btn-primary">Send an order link</a>
+      <p class="text-sm text-muted">{orders.length} orders, {messages.length} messages in total</p>
+    </div>
   </div>
 
   <nav aria-label="Order lists" class="mt-8 flex gap-1 overflow-x-auto border-b border-rule">

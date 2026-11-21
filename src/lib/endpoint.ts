@@ -8,10 +8,11 @@ import type { Result } from "./forms";
 type Handler<T> = {
   page: string; // where the form lives, for no-JS error redirects
   parse: (form: FormData) => Result<T>;
-  /** Keeps the submission for Nancy's dashboard; returns its dashboard path. */
-  save?: (value: T, now: Date) => Promise<string>;
+  /** Keeps the submission for Nancy's dashboard; returns its id and dashboard path. */
+  save?: (value: T, now: Date) => Promise<{ id: string; path: string }>;
   emails: (value: T, cfg: SendConfig, dashboardUrl: string) => Promise<{ email: Email; to?: string; optional?: boolean }[]>;
-  thanks: (value: T) => string;
+  /** Where the visitor goes next (the thank-you page, or PayPal checkout). */
+  thanks: (value: T, id: string) => string;
 };
 
 export function formEndpoint<T>(h: Handler<T>) {
@@ -39,9 +40,12 @@ export function formEndpoint<T>(h: Handler<T>) {
 
     // Save first, but never lose a submission over it: the email to Nancy has everything too.
     let dashboardUrl = "";
+    let id = "";
     if (h.save) {
       try {
-        dashboardUrl = new URL(await h.save(result.value, new Date()), request.url).href;
+        const saved = await h.save(result.value, new Date());
+        id = saved.id;
+        dashboardUrl = new URL(saved.path, request.url).href;
       } catch (err) {
         console.error("Form: could not save to the dashboard", err);
       }
@@ -60,6 +64,7 @@ export function formEndpoint<T>(h: Handler<T>) {
       console.error("Form: send failed", err);
       return reply(502, { ok: false, error: "send_failed" }, back);
     }
-    return reply(200, { ok: true }, h.thanks(result.value));
+    const next = h.thanks(result.value, id);
+    return reply(200, { ok: true, next }, next);
   };
 }
