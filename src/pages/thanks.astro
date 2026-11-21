@@ -7,7 +7,7 @@ import { site } from "../site";
   <div class="mx-auto max-w-3xl px-4 py-20 sm:px-6" data-thanks data-paypal={site.paypalEmail}>
     <p class="label">Received</p>
     <h1 class="mt-4 text-4xl sm:text-5xl" data-title>Thank you. Your message is in.</h1>
-    <p class="mt-5 text-lg leading-relaxed text-muted" data-lead>I'll reply within one business day.</p>
+    <p class="mt-5 text-lg leading-relaxed text-muted" data-lead>I've emailed you a confirmation, and I'll reply within one business day. If you don't see it, check your spam folder.</p>
 
     <div data-order hidden class="mt-10 rounded-card bg-sheet p-7 shadow-[var(--shadow-sheet)]">
       <p class="label">Your order</p>
@@ -60,9 +60,9 @@ import { site } from "../site";
     lead.textContent = "You haven't paid yet. I've emailed you a link so you can pay any time. Writing starts once payment is received.";
   } else if (kind === "review") {
     title.textContent = "Thank you. Your resume is in.";
-    lead.textContent = "I'll send your free review by email, usually within a couple of business days.";
+    lead.textContent = "I've emailed you a confirmation. I'll send your free review by email, usually within a couple of business days. If you don't see it, check your spam folder.";
   } else if (kind === "call") {
     title.textContent = "Thank you. Your call request is in.";
-    lead.textContent = "I'll confirm the time by email, then call you at the number you gave.";
+    lead.textContent = "This time isn't confirmed yet. I've emailed you a note, and I'll reply to confirm the time, then call you at the number you gave.";
   }
 </script>
