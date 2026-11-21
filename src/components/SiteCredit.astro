@@ -1,0 +1,23 @@
+---
+// "Site by Pixel & Tally" credit. One color: it takes this site's text color and font.
+// Only the slash uses a theme accent, so it fits each client's own look.
+interface Props {
+  slash?: string; // a theme stroke class, e.g. "stroke-accent"
+  class?: string;
+}
+const { slash = "stroke-accent", class: className = "" } = Astro.props;
+const href = "https://pixelandtally.com/?utm_source=resumepronc&utm_medium=site-credit";
+---
+
+<a href={href} class:list={["inline-flex items-center gap-2 opacity-80 hover:opacity-100", className]}>
+  <svg class="h-4 w-4 shrink-0" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+    <g class="stroke-current" stroke-width="3" stroke-linecap="square">
+      <line x1="7" y1="7" x2="7" y2="25"></line>
+      <line x1="13" y1="7" x2="13" y2="25"></line>
+      <line x1="19" y1="7" x2="19" y2="25"></line>
+      <line x1="25" y1="7" x2="25" y2="25"></line>
+    </g>
+    <line x1="3" y1="21" x2="29" y2="11" class={slash} stroke-width="3.4" stroke-linecap="square"></line>
+  </svg>
+  <span>Site by <strong class="font-semibold">Pixel &amp; Tally</strong></span>
+</a>
