@@ -3,11 +3,11 @@
 // (with public/_redirects and public/_headers); the form endpoints, Nancy's
 // dashboard and the weekday morning run use the Worker (src/worker.ts).
 // Secrets (RESEND_API_KEY, CONTACT_TO_EMAIL, CONTACT_FROM_EMAIL, ADMIN_PASSWORD, SESSION_SECRET,
-// optional SITE_URL) are set in the Cloudflare dashboard: Workers & Pages > resume-pro-nc >
+// optional SITE_URL) are set in the Cloudflare dashboard: Workers & Pages > pixel-and-tally-resume-pro-nc >
 // Settings > Variables and Secrets. Custom domain: Settings > Domains & Routes.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "resume-pro-nc",
+  "name": "pixel-and-tally-resume-pro-nc",
   "main": "./dist/_worker.js/index.js",
   "compatibility_date": "2025-09-01",
   // nodejs_compat (with a date after 2025-04-01) also fills process.env from the dashboard's variables.
