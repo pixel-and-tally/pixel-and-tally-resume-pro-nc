@@ -36,6 +36,7 @@ const { title, signedIn = true } = Astro.props;
                 <label for="find" class="sr-only">Find a client</label>
                 <input id="find" name="q" type="search" autocomplete="off" placeholder="Find a client" class="field !w-44 !py-1.5 text-sm" />
               </form>
+              <a href="/admin/settings/" class="text-muted underline underline-offset-4">Settings</a>
               <a href="/" class="text-muted underline underline-offset-4">View website</a>
               <form method="post" action="/admin/logout/">
                 <button class="font-semibold text-accent underline underline-offset-4">Log out</button>

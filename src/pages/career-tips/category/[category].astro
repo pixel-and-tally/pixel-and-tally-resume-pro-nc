@@ -5,10 +5,8 @@ import PostList from "../../../components/PostList.astro";
 import { blogCategories } from "../../../site";
 import { slugify, sortedPosts } from "../../../lib/blog";
 
-export async function getStaticPaths() {
-  return blogCategories.map((c) => ({ params: { category: slugify(c) }, props: { name: c } }));
-}
-const { name } = Astro.props;
+const name = blogCategories.find((c) => slugify(c) === Astro.params.category);
+if (!name) return new Response(null, { status: 404 });
 const posts = (await sortedPosts()).filter((p) => p.data.categories.includes(name));
 ---
 

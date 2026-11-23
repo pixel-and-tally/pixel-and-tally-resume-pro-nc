@@ -1,0 +1,269 @@
+---
+// Settings Nancy changes herself: phone numbers, email, where form notes go,
+// call hours, prices, turnaround, payment and review links, the morning email
+// and her dashboard password.
+import Admin from "../../layouts/Admin.astro";
+import { isAdmin } from "../../lib/admin";
+import { authConfig, passwordMatches, sameOrigin } from "../../lib/auth";
+import { money } from "../../lib/order";
+import {
+  checkNewPassword,
+  days,
+  loadSettings,
+  parseSettings,
+  phoneSlots,
+  saveSettings,
+  savedPasswordHash,
+  setPassword,
+  verifyHash,
+  type SettingsErrors,
+} from "../../lib/settings";
+import { services } from "../../site";
+
+export const prerender = false;
+
+if (!isAdmin(Astro.cookies)) return Astro.redirect("/admin/login/");
+
+const current = await loadSettings();
+// What the form shows: saved values, or what Nancy typed if something needs fixing.
+let typed: FormData | null = null;
+let errors: SettingsErrors = {};
+let pwError = "";
+let pwField = "";
+const saved = Astro.url.searchParams.get("saved");
+
+if (Astro.request.method === "POST" && sameOrigin(Astro.request)) {
+  const form = await Astro.request.formData();
+  if (form.get("action") === "password") {
+    const now = String(form.get("current") ?? "");
+    const next = String(form.get("new") ?? "");
+    const hash = await savedPasswordHash();
+    const ok = hash ? verifyHash(now, hash) : passwordMatches(now, authConfig().password);
+    if (!ok) {
+      pwError = "That isn't your current password.";
+      pwField = "current";
+    } else if ((pwError = checkNewPassword(next, String(form.get("confirm") ?? "")))) {
+      pwField = next.length < 10 ? "new" : "confirm";
+    } else {
+      await setPassword(next);
+      return Astro.redirect("/admin/settings/?saved=password#password", 303);
+    }
+  } else {
+    const result = parseSettings(form);
+    if (result.ok) {
+      await saveSettings(result.settings);
+      return Astro.redirect("/admin/settings/?saved=settings", 303);
+    }
+    errors = result.errors;
+    typed = form;
+  }
+}
+
+const val = (key: string, fallback: string | number) => (typed ? String(typed.get(key) ?? "") : String(fallback));
+const err = (k: string) => errors[k] ?? "";
+const bad = Object.keys(errors);
+const firstBad = bad[0] ?? "";
+const morningOn = typed ? typed.get("morningEmail") === "on" : current.morningEmail;
+const card = "rounded-card border border-rule bg-sheet p-6 shadow-[var(--shadow-sheet)] sm:p-8";
+const h2 = "font-display text-2xl";
+const lab = "text-sm font-semibold";
+const help = "text-sm text-muted";
+const errCls = "text-sm font-semibold text-danger";
+
+type F = { id: string; label: string; help?: string; type?: "text" | "email" | "url"; ac?: astroHTML.JSX.InputHTMLAttributes["autocomplete"]; value: string | number; mode?: "numeric" | "decimal" };
+const contact: F[] = [
+  { id: "email", label: "Email on the website", type: "email", ac: "email", value: current.email },
+  {
+    id: "notifyEmail",
+    label: "Send form notes to",
+    help: "Where new orders, messages, review requests and your morning email go. Separate two addresses with a comma. Leave empty to use the address Blake set up.",
+    ac: "email",
+    value: current.notifyEmail,
+  },
+];
+const work: F[] = [
+  { id: "turnaround", label: "Usual turnaround", help: 'Shown on the site, like "5 to 7 business days".', ac: "off", value: current.turnaround },
+  { id: "draftDays", label: "Days to first draft", help: "Business days from payment. Sets the due date on Today.", ac: "off", value: current.draftDays, mode: "numeric" },
+  { id: "revisionWindowDays", label: "Free revision days", help: "After the client approves the final files.", ac: "off", value: current.revisionWindowDays, mode: "numeric" },
+];
+const links: F[] = [
+  { id: "paypalEmail", label: "PayPal account email", help: "Clients pay this account at checkout. Leave empty to email invoices instead.", type: "email", ac: "email", value: current.paypalEmail },
+  { id: "reviewRequestUrl", label: "Review link sent with final files", help: "Leave empty to leave that line out of the email.", type: "url", ac: "url", value: current.reviewRequestUrl },
+  { id: "googleReviewsUrl", label: "Google reviews page", type: "url", ac: "url", value: current.googleReviewsUrl },
+];
+---
+
+<Admin title="Settings">
+  <div class="flex flex-col gap-8">
+    <div>
+      <p class="label">Your dashboard</p>
+      <h1 class="mt-2 text-4xl">Settings</h1>
+      <p class="mt-2 max-w-2xl text-muted">Change your contact details, hours, prices and more. The website updates within a minute of saving.</p>
+    </div>
+
+    {saved === "settings" && <p role="status" class="rounded bg-accent-soft p-4 font-semibold text-accent">Saved. The website shows the new details now.</p>}
+    {
+      firstBad && (
+        <p role="alert" class="rounded bg-mark p-4 font-semibold text-danger">
+          Nothing was saved yet. Fix the {bad.length === 1 ? "field" : `${bad.length} fields`} marked below.
+        </p>
+      )
+    }
+
+    <form method="post" class="flex flex-col gap-8" novalidate>
+      <input type="hidden" name="action" value="settings" />
+
+      <section class={card} aria-labelledby="s-contact">
+        <h2 id="s-contact" class={h2}>Contact</h2>
+        <div class="mt-6 flex flex-col gap-5">
+          {
+            contact.map((f) => (
+              <div class="flex flex-col gap-1.5">
+                <label for={f.id} class={lab}>{f.label}</label>
+                <input id={f.id} name={f.id} type={f.type ?? "text"} autocomplete={f.ac} value={val(f.id, f.value)} autofocus={firstBad === f.id} aria-invalid={err(f.id) ? "true" : undefined} aria-describedby={`${f.id}-help ${f.id}-error`} class="field" />
+                {f.help && <p id={`${f.id}-help`} class={help}>{f.help}</p>}
+                <p id={`${f.id}-error`} class={errCls} hidden={!err(f.id)}>{err(f.id)}</p>
+              </div>
+            ))
+          }
+          <fieldset class="flex flex-col gap-3">
+            <legend class={lab}>Phone numbers</legend>
+            <p class={help}>Shown in the header and footer. Leave a row empty to hide it.</p>
+            {
+              Array.from({ length: phoneSlots }, (_, i) => {
+                const p = current.phones[i] ?? { label: "", number: "" };
+                const e = err(`phone-${i}`);
+                return (
+                  <div class="grid gap-3 sm:grid-cols-2">
+                    <div class="flex flex-col gap-1">
+                      <label for={`phone-${i}`} class="text-xs font-semibold text-muted">Number {i + 1}</label>
+                      <input id={`phone-${i}`} name={`phone-${i}`} type="tel" autocomplete="tel" value={val(`phone-${i}`, p.number)} autofocus={firstBad === `phone-${i}`} aria-invalid={e ? "true" : undefined} aria-describedby={`phone-${i}-error`} class="field" />
+                    </div>
+                    <div class="flex flex-col gap-1">
+                      <label for={`phoneLabel-${i}`} class="text-xs font-semibold text-muted">Label, like "Charlotte, NC"</label>
+                      <input id={`phoneLabel-${i}`} name={`phoneLabel-${i}`} type="text" autocomplete="off" value={val(`phoneLabel-${i}`, p.label)} class="field" />
+                    </div>
+                    <p id={`phone-${i}-error`} class={`${errCls} sm:col-span-2`} hidden={!e}>{e}</p>
+                  </div>
+                );
+              })
+            }
+          </fieldset>
+        </div>
+      </section>
+
+      <section class={card} aria-labelledby="s-hours">
+        <h2 id="s-hours" class={h2}>Phone consultation hours</h2>
+        <p class={`${help} mt-2`}>When clients can pick a free call on the contact page, Eastern time. Clear both times for a day off.</p>
+        <div class="mt-6 flex flex-col gap-3">
+          {
+            days.map((d) => {
+              const h = current.hours[d.n] ?? { from: "", to: "" };
+              const e = err(`from-${d.n}`);
+              return (
+                <div class="grid grid-cols-[6.5rem_1fr_1fr] items-end gap-3">
+                  <span class="pb-2.5 font-semibold">{d.name}</span>
+                  <div class="flex flex-col gap-1">
+                    <label for={`from-${d.n}`} class="text-xs font-semibold text-muted">From</label>
+                    <input id={`from-${d.n}`} name={`from-${d.n}`} type="time" step="1800" autocomplete="off" value={val(`from-${d.n}`, h.from)} autofocus={firstBad === `from-${d.n}`} aria-invalid={e ? "true" : undefined} aria-describedby={`from-${d.n}-error`} class="field" />
+                  </div>
+                  <div class="flex flex-col gap-1">
+                    <label for={`to-${d.n}`} class="text-xs font-semibold text-muted">To</label>
+                    <input id={`to-${d.n}`} name={`to-${d.n}`} type="time" step="1800" autocomplete="off" value={val(`to-${d.n}`, h.to)} aria-invalid={e ? "true" : undefined} aria-describedby={`from-${d.n}-error`} class="field" />
+                  </div>
+                  <p id={`from-${d.n}-error`} class={`${errCls} col-span-3`} hidden={!e}>{e}</p>
+                </div>
+              );
+            })
+          }
+        </div>
+      </section>
+
+      <section class={card} aria-labelledby="s-prices">
+        <h2 id="s-prices" class={h2}>Services and prices</h2>
+        <p class={`${help} mt-2`}>In dollars. The website, order form, checkout and emails all use these.</p>
+        <div class="mt-6 grid gap-5 sm:grid-cols-2">
+          {
+            services.map((s) => {
+              const e = err(`price-${s.id}`);
+              return (
+                <div class="flex flex-col gap-1.5">
+                  <label for={`price-${s.id}`} class={lab}>{s.name}</label>
+                  <input id={`price-${s.id}`} name={`price-${s.id}`} type="text" inputmode="decimal" autocomplete="off" value={val(`price-${s.id}`, current.prices[s.id] ?? s.price)} autofocus={firstBad === `price-${s.id}`} aria-invalid={e ? "true" : undefined} aria-describedby={`price-${s.id}-help price-${s.id}-error`} class="field" />
+                  <p id={`price-${s.id}-help`} class={help}>Now {money(current.prices[s.id] ?? s.price)}</p>
+                  <p id={`price-${s.id}-error`} class={errCls} hidden={!e}>{e}</p>
+                </div>
+              );
+            })
+          }
+        </div>
+      </section>
+
+      {
+        [
+          { id: "s-work", title: "Turnaround", fields: work },
+          { id: "s-links", title: "Payment and reviews", fields: links },
+        ].map((group) => (
+          <section class={card} aria-labelledby={group.id}>
+            <h2 id={group.id} class={h2}>{group.title}</h2>
+            <div class="mt-6 flex flex-col gap-5">
+              {group.fields.map((f) => (
+                <div class="flex flex-col gap-1.5">
+                  <label for={f.id} class={lab}>{f.label}</label>
+                  <input id={f.id} name={f.id} type={f.type ?? "text"} inputmode={f.mode} autocomplete={f.ac} value={val(f.id, f.value)} autofocus={firstBad === f.id} aria-invalid={err(f.id) ? "true" : undefined} aria-describedby={`${f.id}-help ${f.id}-error`} class="field" />
+                  {f.help && <p id={`${f.id}-help`} class={help}>{f.help}</p>}
+                  <p id={`${f.id}-error`} class={errCls} hidden={!err(f.id)}>{err(f.id)}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        ))
+      }
+
+      <section class={card} aria-labelledby="s-morning">
+        <h2 id="s-morning" class={h2}>Morning email</h2>
+        <div class="mt-6 flex flex-col gap-5">
+          <div class="flex items-start gap-3">
+            <input id="morningEmail" name="morningEmail" type="checkbox" autocomplete="off" checked={morningOn} class="mt-1 size-5 accent-accent" />
+            <label for="morningEmail">Email me the Today list each weekday at 7 AM</label>
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label for="autoPaymentReminderDays" class={lab}>Automatic payment reminder</label>
+            <input id="autoPaymentReminderDays" name="autoPaymentReminderDays" type="text" inputmode="numeric" autocomplete="off" value={val("autoPaymentReminderDays", current.autoPaymentReminderDays)} autofocus={firstBad === "autoPaymentReminderDays"} aria-invalid={err("autoPaymentReminderDays") ? "true" : undefined} aria-describedby="autoPaymentReminderDays-help autoPaymentReminderDays-error" class="field !w-28" />
+            <p id="autoPaymentReminderDays-help" class={help}>Days an order can sit unpaid before the client gets one friendly reminder in your words. 0 turns it off.</p>
+            <p id="autoPaymentReminderDays-error" class={errCls} hidden={!err("autoPaymentReminderDays")}>{err("autoPaymentReminderDays")}</p>
+          </div>
+        </div>
+      </section>
+
+      <div><button class="btn btn-primary">Save settings</button></div>
+    </form>
+
+    <form method="post" id="password" class={`${card} max-w-xl scroll-mt-6`} novalidate aria-labelledby="s-password">
+      <input type="hidden" name="action" value="password" />
+      <input type="text" name="username" value="nancy" autocomplete="username" hidden />
+      <h2 id="s-password" class={h2}>Your password</h2>
+      <p class={`${help} mt-2`}>At least 10 characters. You stay logged in on this device.</p>
+      {saved === "password" && <p role="status" class="mt-4 rounded bg-accent-soft p-4 font-semibold text-accent">Password changed. Use the new one next time you log in.</p>}
+      {pwError && <p role="alert" class="mt-4 rounded bg-mark p-4 font-semibold text-danger">Your password wasn't changed.</p>}
+      <div class="mt-6 flex flex-col gap-4">
+        {
+          [
+            { id: "current", label: "Current password", ac: "current-password" },
+            { id: "new", label: "New password", ac: "new-password" },
+            { id: "confirm", label: "New password again", ac: "new-password" },
+          ].map((f) => (
+            <div class="flex flex-col gap-1.5">
+              <label for={f.id} class={lab}>{f.label}</label>
+              <input id={f.id} name={f.id} type="password" autocomplete={f.ac} required autofocus={pwField === f.id} aria-invalid={pwField === f.id ? "true" : undefined} aria-describedby={`${f.id}-error`} class="field" />
+              <p id={`${f.id}-error`} class={errCls} hidden={pwField !== f.id}>{pwField === f.id ? pwError : ""}</p>
+            </div>
+          ))
+        }
+        <div><button class="btn btn-quiet">Change password</button></div>
+      </div>
+    </form>
+
+    <p class={help}>Anything else to change on the site? Ask Blake.</p>
+  </div>
+</Admin>

@@ -1,6 +1,7 @@
 // Turns each form into a plain-text email to Nancy and sends it through Resend.
 // Reply-To is the visitor, so hitting Reply answers them.
 import { buildCallIcs, formatDate, formatTime, type Availability } from "./schedule";
+import { site } from "../site";
 import { money } from "./order";
 import { questionnaire, toAttachment, type ContactValue, type OrderValue, type ReviewValue } from "./forms";
 
@@ -139,6 +140,7 @@ export async function send(email: Email, cfg: SendConfig, to = cfg.to, fetcher: 
 
 export const mailConfig = (): SendConfig => ({
   apiKey: process.env.RESEND_API_KEY ?? "",
-  to: process.env.CONTACT_TO_EMAIL ?? "",
+  // Nancy can change this in her dashboard (Settings > Send form notes to).
+  to: site.notifyEmail || process.env.CONTACT_TO_EMAIL || "",
   from: process.env.CONTACT_FROM_EMAIL || "Resume Pro NC website <onboarding@resend.dev>",
 });

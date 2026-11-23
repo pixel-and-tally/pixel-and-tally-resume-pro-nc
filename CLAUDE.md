@@ -11,8 +11,8 @@ Rule from the rebuild: no feature of the old site may be lost. Look: clean and p
 
 - Astro 5 static site, Tailwind 4 (CSS-first tokens in `src/theme.css`), TypeScript strict.
 - Cloudflare Workers free plan (`@astrojs/cloudflare`, `wrangler.jsonc`, entry `src/worker.ts`, headers in
-  `public/_headers`; moved off Netlify 2026-11-21). Pages are static assets; only `src/pages/api/*` and `/admin/`
-  run in the Worker. Env vars come from `process.env` (filled by `nodejs_compat`). They email Nancy through Resend (env: `RESEND_API_KEY`, `CONTACT_TO_EMAIL`,
+  `public/_headers`; moved off Netlify 2026-11-21). Every page runs in the Worker (`output: "server"`, only `404`
+  is prerendered; the sitemap's page list is built in `astro.config.mjs`) so Nancy's dashboard Settings show up right away. Env vars come from `process.env` (filled by `nodejs_compat`). They email Nancy through Resend (env: `RESEND_API_KEY`, `CONTACT_TO_EMAIL`,
   optional `CONTACT_FROM_EMAIL`). Validation lives in `src/lib/forms.ts`, emails in `src/lib/mail.ts`.
 - Forms: order (services + questionnaire + resume upload, replaces PayPal buttons + BoomForm),
   free resume review (upload), contact with an optional free phone consultation picker
@@ -47,7 +47,11 @@ Rule from the rebuild: no feature of the old site may be lost. Look: clean and p
 - Every form field gets a label, `autocomplete`, and an inline error; on failure, focus the
   first bad field and show a form-level message (`src/scripts/form.ts`).
 - Colors and type come only from theme tokens, never raw hex.
-- Prices live only in `src/site.ts`; `tests/site.test.ts` pins them. Update both together.
+- Prices live only in `src/site.ts`; `tests/site.test.ts` pins them. Update both together. Those are the starting
+  values: Nancy's Settings (`/admin/settings/`, `src/lib/settings.ts`, KV `settings`) override prices, phones, email,
+  form inbox (over `CONTACT_TO_EMAIL`), call hours, turnaround, PayPal and review links, morning email and her
+  password (KV `settings:password`, over `ADMIN_PASSWORD`). `src/middleware.ts` lays them over site.ts each request,
+  so copy that uses them must read them at render time (see the getters in `steps` and `faqs`).
 - Voice: Nancy in first person ("I"). Plain, warm, professional. No all-caps shouting.
 - Images still load from Wix (`static.wixstatic.com`). Copy them into `public/` before the Wix plan ends.
 - Commit messages say what changed for the visitor, in plain English.

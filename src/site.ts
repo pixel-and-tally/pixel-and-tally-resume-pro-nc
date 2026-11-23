@@ -4,6 +4,11 @@
  *
  * Rules: no em dashes, no invented reviews, stats or client names. Leave a
  * field empty ("") rather than guess; pages hide anything that is empty.
+ *
+ * Nancy can change contact details, call hours, prices, turnaround, payment and
+ * review links and the morning email herself in her dashboard (Settings). Her
+ * saved values win over the ones here (src/lib/settings.ts); these are the
+ * starting point, and tests/site.test.ts pins the starting prices.
  */
 import type { Availability } from "./lib/schedule";
 
@@ -21,6 +26,8 @@ export const site = {
     "Nancy Turner writes resumes, LinkedIn profiles and cover letters for entry-level to executive job seekers. Personally written, never outsourced. Free resume review.",
 
   email: "Nancy@ResumeProNC.com",
+  /** Where form notes and the morning email go. Empty = the CONTACT_TO_EMAIL secret. Nancy can set it in Settings. */
+  notifyEmail: "" as string,
   phones: [
     { label: "Charlotte, NC", number: "704-998-1088" },
     { label: "Greenville, SC", number: "864-735-7123" },
@@ -148,8 +155,19 @@ export const steps = [
   { title: "Call or text me", body: "Reach out by phone, text or the contact form. I'll call you back to learn about your goals and recommend the right service." },
   { title: "Share your details", body: "Fill in the questionnaire, attach your current resume, and add links to the jobs you're applying for." },
   { title: "Pay to get on my schedule", body: "I send you a payment link. Once payment and your questionnaire are in, you're on my writing schedule." },
-  { title: "Review your draft", body: `I email your first draft, usually within ${site.turnaround}. I revise until you're 100% happy.` },
-  { title: "Get your final files", body: `You get a Word file for online applications and a PDF for email and print, plus ${site.revisionWindowDays} days of free revisions.` },
+  // Getters, so Nancy's saved turnaround and revision days show up.
+  {
+    title: "Review your draft",
+    get body() {
+      return `I email your first draft, usually within ${site.turnaround}. I revise until you're 100% happy.`;
+    },
+  },
+  {
+    title: "Get your final files",
+    get body() {
+      return `You get a Word file for online applications and a PDF for email and print, plus ${site.revisionWindowDays} days of free revisions.`;
+    },
+  },
 ];
 
 /** Real client quotes from the old site, as written. Add new ones only with permission. */
@@ -192,11 +210,15 @@ export const faqs = [
   },
   {
     q: "What is the turnaround time?",
-    a: `My typical turnaround is ${site.turnaround}. If you need it sooner, tell me when you order and I'll do my best to make it happen.`,
+    get a() {
+      return `My typical turnaround is ${site.turnaround}. If you need it sooner, tell me when you order and I'll do my best to make it happen.`;
+    },
   },
   {
     q: "Do you have a guarantee?",
-    a: `You bet. My job isn't finished until you're 100% satisfied with your resume, cover letter and LinkedIn profile. We go over your documents together and I revise until you're completely happy. After you approve them, you have ${site.revisionWindowDays} more days of revisions at no charge.`,
+    get a() {
+      return `You bet. My job isn't finished until you're 100% satisfied with your resume, cover letter and LinkedIn profile. We go over your documents together and I revise until you're completely happy. After you approve them, you have ${site.revisionWindowDays} more days of revisions at no charge.`;
+    },
   },
   {
     q: "Do I really need a LinkedIn profile?",
@@ -204,9 +226,11 @@ export const faqs = [
   },
   {
     q: "How and when do I pay?",
-    a: site.paypalEmail
+    get a() {
+      return site.paypalEmail
       ? "Right after you place your order, you can pay securely through PayPal with a credit card, debit card or your PayPal account. You don't need a PayPal account. Writing starts once payment is received."
-      : "After you place your order, I email you an invoice you can pay by credit card, debit card or PayPal. Writing starts once payment is received.",
+      : "After you place your order, I email you an invoice you can pay by credit card, debit card or PayPal. Writing starts once payment is received.";
+    },
   },
 ];
 

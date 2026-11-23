@@ -3,11 +3,10 @@ import Base from "../../layouts/Base.astro";
 import { render } from "astro:content";
 import { postDate, slugify, sortedPosts } from "../../lib/blog";
 
-export async function getStaticPaths() {
-  const posts = await sortedPosts();
-  return posts.map((post, i) => ({ params: { slug: post.id }, props: { post, newer: posts[i - 1], older: posts[i + 1] } }));
-}
-const { post, newer, older } = Astro.props;
+const posts = await sortedPosts();
+const i = posts.findIndex((p) => p.id === Astro.params.slug);
+if (i < 0) return new Response(null, { status: 404 });
+const [post, newer, older] = [posts[i], posts[i - 1], posts[i + 1]];
 const { Content } = await render(post);
 const desc = (post.body ?? "").replace(/[*#>_]/g, "").replace(/\s+/g, " ").trim().slice(0, 155) || post.data.title;
 ---
